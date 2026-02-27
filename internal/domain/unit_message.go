@@ -1,4 +1,4 @@
-package unit_message
+package domain
 
 type UnitMessage struct {
 	GUID      string
