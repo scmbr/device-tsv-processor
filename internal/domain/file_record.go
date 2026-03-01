@@ -9,9 +9,10 @@ import (
 type FileRecordStatus string
 
 var (
-	FileRecordStatusProcessed FileRecordStatus = "PROCESSED"
-	FileRecordStatusPending   FileRecordStatus = "PENDING"
-	FileRecordStatusError     FileRecordStatus = "ERROR"
+	FileRecordStatusProcessed  FileRecordStatus = "PROCESSED"
+	FileRecordStatusProcessing FileRecordStatus = "PROCESSING"
+	FileRecordStatusPending    FileRecordStatus = "PENDING"
+	FileRecordStatusError      FileRecordStatus = "ERROR"
 )
 
 type FileRecord struct {
