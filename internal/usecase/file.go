@@ -73,3 +73,31 @@ func (u *FileRecordUseCase) ScanDirectory(ctx context.Context, in ScanDirectoryI
 	}
 	return nil
 }
+
+type ClaimPendingBatchInput struct {
+	batchSize int
+}
+
+func (uc *FileRecordUseCase) ClaimPendingBatch(ctx context.Context, in ClaimPendingBatchInput) ([]*domain.FileRecord, error) {
+	const op = "file_record.usecase.claim_pending_batch"
+	var err error
+	res, err := uc.fileRepo.ClaimPendingBatch(ctx, in.batchSize)
+	if err != nil {
+		return nil, errs.Wrap(op, err)
+	}
+	return res, nil
+}
+
+type MarkProcessedBatchInput struct {
+	ids []int
+}
+
+func (uc *FileRecordUseCase) MarkProcessedBatch(ctx context.Context, in MarkProcessedBatchInput) error {
+	const op = "file_record.usecase.mark_processed_batch"
+	var err error
+	err = uc.fileRepo.MarkProcessedBatch(ctx, in.ids)
+	if err != nil {
+		return errs.Wrap(op, err)
+	}
+	return nil
+}
