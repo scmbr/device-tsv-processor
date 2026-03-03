@@ -13,4 +13,11 @@ type FileRecordRepository interface {
 	BatchInsert(ctx context.Context, chunk []*domain.FileRecord) error
 	ClaimPendingBatch(ctx context.Context, batchSize int) ([]*domain.FileRecord, error)
 	MarkProcessedBatch(ctx context.Context, ids []int) error
+	UpdateStatus(ctx context.Context, id int, status domain.FileRecordStatus) error
+	MarkFailed(ctx context.Context, id int, error string) error
+	GetPending(ctx context.Context, batchSize int) ([]*domain.FileRecord, error)
+}
+type FileQueue interface {
+	Enqueue(fileID int) error
+	Dequeue() (fileID int, err error)
 }
