@@ -9,4 +9,5 @@ import (
 type ParseErrorRepository interface {
 	Create(ctx context.Context, err *domain.ParseError) error
 	ListByFile(ctx context.Context, filename string) ([]*domain.ParseError, error)
+	BulkInsert(ctx context.Context, errors []*domain.ParseError) error
 }
