@@ -81,3 +81,14 @@ func Wrap(op string, err error) error {
 		Err:  err,
 	}
 }
+func IsKind(err error, kind Kind) bool {
+	for err != nil {
+		if e, ok := As(err); ok {
+			if e.Kind == kind {
+				return true
+			}
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
+}
