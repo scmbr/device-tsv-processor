@@ -17,12 +17,13 @@ var (
 )
 
 type FileRecord struct {
-	ID           int
+	ID           int64
 	Filename     string
 	ProcessedAt  *time.Time
 	CreatedAt    time.Time
 	Status       FileRecordStatus
 	ErrorMessage *string
+	UpdatedAt    *time.Time
 }
 
 func NewFileRecord(fileName string, status FileRecordStatus) (*FileRecord, error) {

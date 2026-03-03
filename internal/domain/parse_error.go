@@ -7,7 +7,9 @@ import (
 )
 
 type ParseError struct {
+	ID         int64
 	Filename   string
+	FileID     int64
 	LineNumber int
 	Message    string
 	CreatedAt  time.Time
