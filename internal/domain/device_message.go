@@ -1,12 +1,14 @@
 package domain
 
 import (
+	"time"
+
 	"github.com/scmbr/device-tsv-processor/internal/errs"
 )
 
 type DeviceMessage struct {
 	ID        int64
-	GUID      string
+	DeviceID  int64
 	InvID     string
 	MsgID     string
 	Text      string
@@ -19,10 +21,10 @@ type DeviceMessage struct {
 	Type      string
 	Bit       int
 	InvertBit bool
+	CreatedAt time.Time
 }
 
 func NewDeviceMessage(
-	guid string,
 	invID string,
 	msgID string,
 	text string,
@@ -37,7 +39,6 @@ func NewDeviceMessage(
 	invertBit bool,
 ) (*DeviceMessage, error) {
 	msg := &DeviceMessage{
-		GUID:      guid,
 		InvID:     invID,
 		MsgID:     msgID,
 		Text:      text,
@@ -63,9 +64,6 @@ func (m *DeviceMessage) Validate() error {
 
 	fields := map[string]string{}
 
-	if m.GUID == "" {
-		fields["guid"] = "is required"
-	}
 	if m.InvID == "" {
 		fields["device_guid"] = "is required"
 	}
