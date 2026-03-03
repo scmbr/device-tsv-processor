@@ -17,6 +17,7 @@ var (
 )
 
 type FileRecord struct {
+	ID           int
 	Filename     string
 	ProcessedAt  *time.Time
 	CreatedAt    time.Time
