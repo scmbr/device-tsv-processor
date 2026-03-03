@@ -10,5 +10,4 @@ type Device struct {
 	Status    string     `db:"status,notnull"`
 	Processed *time.Time `db:"processed_at,omitempty"`
 	CreatedAt time.Time  `db:"created_at,notnull"`
-	UpdatedAt time.Time  `db:"updated_at,notnull"`
 }

@@ -9,4 +9,5 @@ type FileRecord struct {
 	ProcessedAt  *time.Time `db:"processed_at"`
 	Status       string     `db:"status,notnull"`
 	ErrorMessage *string    `db:"error_message,omitempty"`
+	UpdatedAt    *time.Time `db:"updated_at"`
 }
