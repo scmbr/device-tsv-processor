@@ -2,7 +2,7 @@ package domain
 
 import "time"
 
-type Unit struct {
+type Device struct {
 	GUID        string
 	Invid       string
 	MQTT        string
