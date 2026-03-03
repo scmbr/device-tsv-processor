@@ -33,7 +33,7 @@ func NewProcessFile(
 }
 
 type ProcessFileInput struct {
-	FileID int
+	FileID int64
 	Path   string
 }
 
