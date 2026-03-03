@@ -24,6 +24,7 @@ type FileRecord struct {
 	Status       FileRecordStatus
 	ErrorMessage *string
 	UpdatedAt    *time.Time
+	Attempts     int
 }
 
 func NewFileRecord(fileName string, status FileRecordStatus) (*FileRecord, error) {
