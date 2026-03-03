@@ -84,7 +84,6 @@ func (p *TSVParserImpl) Parse(
 
 		msg, err := domain.NewDeviceMessage(
 			fields[3],  // GUID (unit_guid)
-			fields[2],  // DeviceGUID (invid)
 			fields[4],  // MsgID
 			fields[5],  // Text
 			fields[6],  // Context
