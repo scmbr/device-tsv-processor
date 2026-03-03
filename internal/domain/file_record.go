@@ -10,16 +10,18 @@ type FileRecordStatus string
 
 var (
 	FileRecordStatusProcessed  FileRecordStatus = "PROCESSED"
+	FileRecordStatusQueued     FileRecordStatus = "QUEUED"
 	FileRecordStatusProcessing FileRecordStatus = "PROCESSING"
 	FileRecordStatusPending    FileRecordStatus = "PENDING"
 	FileRecordStatusError      FileRecordStatus = "ERROR"
 )
 
 type FileRecord struct {
-	Filename    string
-	ProcessedAt *time.Time
-	CreatedAt   time.Time
-	Status      FileRecordStatus
+	Filename     string
+	ProcessedAt  *time.Time
+	CreatedAt    time.Time
+	Status       FileRecordStatus
+	ErrorMessage *string
 }
 
 func NewFileRecord(fileName string, status FileRecordStatus) (*FileRecord, error) {
