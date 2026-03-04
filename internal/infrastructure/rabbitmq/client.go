@@ -16,9 +16,8 @@ type Config struct {
 }
 
 type Client struct {
-	conn      *amqp.Connection
-	channel   *amqp.Channel
-	QueueName string
+	Conn    *amqp.Connection
+	Channel *amqp.Channel
 }
 
 func NewRabbitMQClient(cfg Config) (*Client, error) {
@@ -41,30 +40,15 @@ func NewRabbitMQClient(cfg Config) (*Client, error) {
 		return nil, err
 	}
 
-	_, err = ch.QueueDeclare(
-		cfg.QueueName,
-		true,  // durable
-		false, // auto-delete
-		false, // exclusive
-		false, // no-wait
-		nil,
-	)
-	if err != nil {
-		conn.Close()
-		ch.Close()
-		return nil, err
-	}
-
 	return &Client{
-		conn:      conn,
-		channel:   ch,
-		QueueName: cfg.QueueName,
+		Conn:    conn,
+		Channel: ch,
 	}, nil
 }
 
 func (c *Client) Close() error {
-	if err := c.channel.Close(); err != nil {
+	if err := c.Channel.Close(); err != nil {
 		return err
 	}
-	return c.conn.Close()
+	return c.Conn.Close()
 }
