@@ -2,29 +2,20 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/scmbr/device-tsv-processor/internal/domain"
 	"github.com/scmbr/device-tsv-processor/internal/errs"
+	dberrs "github.com/scmbr/device-tsv-processor/internal/infrastructure/postgres/errs"
+	"github.com/scmbr/device-tsv-processor/internal/infrastructure/postgres/models"
 )
-
-type FileRecordRepository interface {
-	Create(ctx context.Context, file *domain.FileRecord) error
-	Exists(ctx context.Context, filename string) (bool, error)
-	BatchInsert(ctx context.Context, chunk []*domain.FileRecord) error
-	UpdateStatus(ctx context.Context, id int, status domain.FileRecordStatus) error
-	MarkFailed(ctx context.Context, id int, error string) error
-	GetPending(ctx context.Context, batchSize int) ([]*domain.FileRecord, error)
-}
 
 type fileRecordRepo struct {
 	db *sqlx.DB
 }
 
-func NewFileRecordRepository(db *sqlx.DB) FileRecordRepository {
+func NewFileRecordRepository(db *sqlx.DB) *fileRecordRepo {
 	return &fileRecordRepo{db: db}
 }
 
@@ -41,15 +32,20 @@ func (r *fileRecordRepo) Create(ctx context.Context, file *domain.FileRecord) er
 	file.CreatedAt = now
 	file.UpdatedAt = &now
 
-	return r.db.QueryRowContext(
+	err := r.db.QueryRowContext(
 		ctx,
 		query,
 		file.Filename,
-		file.Status,
+		string(file.Status),
 		file.ErrorMessage,
 		file.CreatedAt,
 		file.UpdatedAt,
 	).Scan(&file.ID)
+
+	if err != nil {
+		return dberrs.Map(err, op)
+	}
+	return nil
 }
 func (r *fileRecordRepo) Exists(ctx context.Context, filename string) (bool, error) {
 	const op = "file_record.repo.exists"
@@ -64,17 +60,19 @@ func (r *fileRecordRepo) Exists(ctx context.Context, filename string) (bool, err
 	var dummy int
 	err := r.db.GetContext(ctx, &dummy, query, filename)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errs.IsKind(dberrs.Map(err, op), dberrs.KindNotFound) {
 			return false, nil
 		}
-		return false, errs.Wrap(op, err)
+		return false, dberrs.Map(err, op)
 	}
 
 	return true, nil
 }
 func (r *fileRecordRepo) BatchInsert(ctx context.Context, chunk []*domain.FileRecord) error {
 	const op = "file_record.repo.batch_insert"
-
+	if len(chunk) == 0 {
+		return nil
+	}
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return errs.Wrap(op, err)
@@ -96,18 +94,18 @@ func (r *fileRecordRepo) BatchInsert(ctx context.Context, chunk []*domain.FileRe
 			ctx,
 			query,
 			file.Filename,
-			file.Status,
+			string(file.Status),
 			file.ErrorMessage,
 			file.CreatedAt,
 			file.UpdatedAt,
 		)
 		if err != nil {
-			return errs.Wrap(op, err)
+			return dberrs.Map(err, op)
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return errs.Wrap(op, err)
+		return dberrs.Map(err, op)
 	}
 
 	return nil
@@ -122,14 +120,14 @@ func (r *fileRecordRepo) UpdateStatus(ctx context.Context, id int, status domain
         WHERE id = $3
     `
 
-	res, err := r.db.ExecContext(ctx, query, status, time.Now(), id)
+	res, err := r.db.ExecContext(ctx, query, string(status), time.Now(), id)
 	if err != nil {
-		return errs.Wrap(op, err)
+		return dberrs.Map(err, op)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return errs.Wrap(op, err)
+		return dberrs.Map(err, op)
 	}
 
 	if affected == 0 {
@@ -159,18 +157,18 @@ func (r *fileRecordRepo) MarkFailed(ctx context.Context, id int, errorMsg string
 	res, err := r.db.ExecContext(
 		ctx,
 		query,
-		domain.FileRecordStatusError,
+		string(domain.FileRecordStatusError),
 		errorMsg,
 		time.Now(),
 		id,
 	)
 	if err != nil {
-		return errs.Wrap(op, err)
+		return dberrs.Map(err, op)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return errs.Wrap(op, err)
+		return dberrs.Map(err, op)
 	}
 
 	if affected == 0 {
@@ -197,16 +195,15 @@ func (r *fileRecordRepo) GetPending(ctx context.Context, batchSize int) ([]*doma
         LIMIT $2
     `
 
-	var files []*domain.FileRecord
-	if err := r.db.SelectContext(
-		ctx,
-		&files,
-		query,
-		domain.FileRecordStatusPending,
-		batchSize,
-	); err != nil {
-		return nil, errs.Wrap(op, err)
+	var models []*models.FileRecord
+	if err := r.db.SelectContext(ctx, &models, query, string(domain.FileRecordStatusPending), batchSize); err != nil {
+		return nil, dberrs.Map(err, op)
 	}
 
-	return files, nil
+	out := make([]*domain.FileRecord, 0, len(models))
+	for _, m := range models {
+		out = append(out, m.ToDomain())
+	}
+
+	return out, nil
 }

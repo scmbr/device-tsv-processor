@@ -6,18 +6,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/scmbr/device-tsv-processor/internal/domain"
-	"github.com/scmbr/device-tsv-processor/internal/errs"
+	dberrs "github.com/scmbr/device-tsv-processor/internal/infrastructure/postgres/errs"
 )
-
-type ParseErrorRepository interface {
-	BulkInsert(ctx context.Context, errors []*domain.ParseError) error
-}
 
 type parseErrorRepo struct {
 	db *sqlx.DB
 }
 
-func NewParseErrorRepository(db *sqlx.DB) ParseErrorRepository {
+func NewParseErrorRepository(db *sqlx.DB) *parseErrorRepo {
 	return &parseErrorRepo{db: db}
 }
 
@@ -28,11 +24,7 @@ func (r *parseErrorRepo) BulkInsert(ctx context.Context, errors []*domain.ParseE
 		return nil
 	}
 
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return errs.Wrap(op, err)
-	}
-	defer tx.Rollback()
+	exec := GetExecFromCtx(ctx, r.db)
 
 	query := `
         INSERT INTO parse_errors (filename,file_id, line, raw, error, created_at)
@@ -46,7 +38,7 @@ func (r *parseErrorRepo) BulkInsert(ctx context.Context, errors []*domain.ParseE
 			e.CreatedAt = now
 		}
 
-		_, err := tx.ExecContext(
+		_, err := exec.ExecContext(
 			ctx,
 			query,
 			e.Filename,
@@ -56,12 +48,8 @@ func (r *parseErrorRepo) BulkInsert(ctx context.Context, errors []*domain.ParseE
 			e.CreatedAt,
 		)
 		if err != nil {
-			return errs.Wrap(op, err)
+			return dberrs.Map(err, op)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errs.Wrap(op, err)
 	}
 
 	return nil

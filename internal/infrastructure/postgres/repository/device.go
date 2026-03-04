@@ -7,43 +7,39 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/scmbr/device-tsv-processor/internal/domain"
 	"github.com/scmbr/device-tsv-processor/internal/errs"
+	dberrs "github.com/scmbr/device-tsv-processor/internal/infrastructure/postgres/errs"
+	"github.com/scmbr/device-tsv-processor/internal/infrastructure/postgres/models"
 )
-
-type DeviceRepository interface {
-	GetByUnitGUID(ctx context.Context, unitGUID string) (*domain.Device, error)
-	Create(ctx context.Context, device *domain.Device) (*domain.Device, error)
-	CreateIfNotExists(ctx context.Context, device *domain.Device) (*domain.Device, error)
-}
 
 type deviceRepo struct {
 	db *sqlx.DB
 }
 
-func NewDeviceRepository(db *sqlx.DB) DeviceRepository {
+func NewDeviceRepository(db *sqlx.DB) *deviceRepo {
 	return &deviceRepo{db: db}
 }
 
 func (r *deviceRepo) GetByUnitGUID(ctx context.Context, unitGUID string) (*domain.Device, error) {
 	const op = "device.repo.get_by_unit_guid"
 
-	device := &domain.Device{}
+	var m models.Device
 	query := `
-        SELECT id, guid, inv_id, mqtt, processed_at, status, created_at
+        SELECT id, unit_guid, inv_id, mqtt, status, processed_at, created_at
         FROM device
-        WHERE guid = $1
+        WHERE unit_guid = $1
     `
-	if err := r.db.GetContext(ctx, device, query, unitGUID); err != nil {
-		return nil, errs.E(errs.KindNotFound, "DEVICE_NOT_FOUND", op, err.Error(), nil, nil)
+	if err := r.db.GetContext(ctx, &m, query, unitGUID); err != nil {
+		return nil, dberrs.Map(err, op)
 	}
 
-	return device, nil
+	return m.ToDomain(), nil
 }
 
 func (r *deviceRepo) Create(ctx context.Context, device *domain.Device) (*domain.Device, error) {
 	const op = "device.repo.create"
 
 	query := `
-        INSERT INTO device (guid, inv_id, mqtt, processed_at, status, created_at)
+        INSERT INTO device (unit_guid, inv_id, mqtt, status, processed_at, created_at)
         VALUES ($1,$2,$3,$4,$5,$6)
         RETURNING id
     `
@@ -55,12 +51,12 @@ func (r *deviceRepo) Create(ctx context.Context, device *domain.Device) (*domain
 		device.GUID,
 		device.InvID,
 		device.MQTT,
-		device.ProcessedAt,
 		device.Status,
+		device.ProcessedAt,
 		device.CreatedAt,
 	).Scan(&id)
 	if err != nil {
-		return nil, errs.Wrap(op, err)
+		return nil, dberrs.Map(err, op)
 	}
 	device.ID = id
 	return device, nil
@@ -78,5 +74,5 @@ func (r *deviceRepo) CreateIfNotExists(ctx context.Context, device *domain.Devic
 		return r.Create(ctx, device)
 	}
 
-	return nil, errs.Wrap(op, err)
+	return nil, dberrs.Map(err, op)
 }
