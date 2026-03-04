@@ -9,6 +9,15 @@ import (
 	"github.com/scmbr/device-tsv-processor/internal/errs"
 )
 
+type Kind = errs.Kind
+
+const (
+	KindNotFound = errs.KindNotFound
+	KindConflict = errs.KindConflict
+	KindInvalid  = errs.KindInvalid
+	KindInternal = errs.KindInternal
+)
+
 func Map(err error, op string) error {
 	if err == nil {
 		return nil
