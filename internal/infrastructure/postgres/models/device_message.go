@@ -1,10 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/scmbr/device-tsv-processor/internal/domain"
+)
 
 type DeviceMessage struct {
 	ID        int64     `db:"id,primarykey,autoincrement"`
-	DeviceID  int       `db:"device_id,notnull"`
+	DeviceID  int64     `db:"device_id,notnull"`
 	InvID     string    `db:"inv_id,notnull"`
 	MsgID     string    `db:"msg_id,unique,notnull"`
 	Text      string    `db:"text"`
@@ -18,4 +22,28 @@ type DeviceMessage struct {
 	Bit       int       `db:"bit"`
 	InvertBit bool      `db:"invert_bit"`
 	CreatedAt time.Time `db:"created_at,notnull"`
+}
+
+func (m *DeviceMessage) ToDomain() *domain.DeviceMessage {
+	if m == nil {
+		return nil
+	}
+
+	return &domain.DeviceMessage{
+		ID:        m.ID,
+		DeviceID:  m.DeviceID,
+		InvID:     m.InvID,
+		MsgID:     m.MsgID,
+		Text:      m.Text,
+		Context:   m.Context,
+		Class:     m.Class,
+		Level:     m.Level,
+		Area:      m.Area,
+		Addr:      m.Addr,
+		Block:     m.Block,
+		Type:      m.Type,
+		Bit:       m.Bit,
+		InvertBit: m.InvertBit,
+		CreatedAt: m.CreatedAt,
+	}
 }
