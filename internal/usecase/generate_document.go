@@ -14,14 +14,14 @@ type GenerateDocument struct {
 	messageRepo  repository.DeviceMessageRepository
 	errorRepo    repository.ParseErrorRepository
 	outputDir    string
-	docGenerator DocumentGenerator
+	docGenerator PDFGenerator
 }
 
 func NewGenerateDocument(
 	messageRepo repository.DeviceMessageRepository,
 	errorRepo repository.ParseErrorRepository,
 	outputDir string,
-	docGenerator DocumentGenerator,
+	docGenerator PDFGenerator,
 ) *GenerateDocument {
 	return &GenerateDocument{
 		messageRepo:  messageRepo,
