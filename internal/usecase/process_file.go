@@ -44,7 +44,7 @@ func (uc *ProcessFile) Execute(ctx context.Context, input ProcessFileInput) erro
 		return errs.Wrap(op, err)
 	}
 
-	records, parseErrors, err := uc.parser.Parse(input.Path)
+	records, parseErrors, err := uc.parser.Parse(ctx, input.Path)
 	if err != nil {
 		_ = uc.fileRepo.MarkFailed(ctx, input.FileID, err.Error())
 		return errs.Wrap(op, err)
