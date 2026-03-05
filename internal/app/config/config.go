@@ -19,8 +19,9 @@ type Config struct {
 	Rabbit      RabbitConfig
 	HTTP        HTTPConfig
 
-	BatchSize int    `mapstructure:"batch_size"`
-	OutputDir string `mapstructure:"output_dir"`
+	BatchSize   int    `mapstructure:"batch_size"`
+	OutputDir   string `mapstructure:"output_dir"`
+	MaxAttempts int    `mapstructure:"max_attempts"`
 }
 
 type PostgresConfig struct {
@@ -40,12 +41,13 @@ type HTTPConfig struct {
 	MaxHeaderMegabytes int           `mapstructure:"maxHeaderBytes"`
 }
 type RabbitConfig struct {
-	Host      string `mapstructure:"host"`
-	Port      int    `mapstructure:"port"`
-	Username  string
-	Password  string
-	VHost     string
-	QueueName string `mapstructure:"queue_name"`
+	Host              string `mapstructure:"host"`
+	Port              int    `mapstructure:"port"`
+	Username          string
+	Password          string
+	VHost             string
+	FileQueueName     string `mapstructure:"file_queue_name"`
+	DocumentQueueName string `mapstructure:"document_queue_name"`
 }
 
 func Init(configsDir string) (*Config, error) {
@@ -169,8 +171,11 @@ func (c *Config) Validate() error {
 	if c.Rabbit.VHost == "" {
 		return fmt.Errorf("rabbit vhost is required")
 	}
-	if c.Rabbit.QueueName == "" {
-		return fmt.Errorf("rabbit queue_name is required")
+	if c.Rabbit.FileQueueName == "" {
+		return fmt.Errorf("rabbit file_queue_name is required")
+	}
+	if c.Rabbit.DocumentQueueName == "" {
+		return fmt.Errorf("rabbit document_queue_name is required")
 	}
 
 	if c.HTTP.Port <= 0 || c.HTTP.Port > 65535 {
@@ -187,6 +192,9 @@ func (c *Config) Validate() error {
 	}
 	if c.BatchSize > 500 || c.BatchSize <= 0 {
 		return fmt.Errorf("batch size must be between 0 and 500")
+	}
+	if c.BatchSize > 10 || c.BatchSize <= 0 {
+		return fmt.Errorf("batch size must be between 0 and 10")
 	}
 	return nil
 }
