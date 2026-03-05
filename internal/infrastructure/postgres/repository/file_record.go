@@ -110,7 +110,7 @@ func (r *fileRecordRepo) BatchInsert(ctx context.Context, chunk []*domain.FileRe
 
 	return nil
 }
-func (r *fileRecordRepo) UpdateStatus(ctx context.Context, id int, status domain.FileRecordStatus) error {
+func (r *fileRecordRepo) UpdateStatus(ctx context.Context, id int64, status domain.FileRecordStatus) error {
 	const op = "file_record.repo.update_status"
 
 	query := `
@@ -143,7 +143,7 @@ func (r *fileRecordRepo) UpdateStatus(ctx context.Context, id int, status domain
 
 	return nil
 }
-func (r *fileRecordRepo) MarkFailed(ctx context.Context, id int, errorMsg string) error {
+func (r *fileRecordRepo) MarkFailed(ctx context.Context, id int64, errorMsg string) error {
 	const op = "file_record.repo.mark_failed"
 
 	query := `
