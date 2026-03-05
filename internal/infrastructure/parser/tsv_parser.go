@@ -12,13 +12,13 @@ import (
 	"github.com/scmbr/device-tsv-processor/internal/errs"
 )
 
-type TSVParserImpl struct{}
+type TSVParser struct{}
 
-func NewTSVParser() *TSVParserImpl {
-	return &TSVParserImpl{}
+func NewTSVParser() *TSVParser {
+	return &TSVParser{}
 }
 
-func (p *TSVParserImpl) Parse(
+func (p *TSVParser) Parse(
 	ctx context.Context,
 	path string,
 ) ([]*domain.DeviceMessage, []*domain.ParseError, error) {
