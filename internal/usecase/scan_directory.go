@@ -12,16 +12,19 @@ import (
 )
 
 type ScanDirectory struct {
-	fileRepo repository.FileRecordRepository
+	fileRepo  repository.FileRecordRepository
+	batchSize int
 }
 
-func NewScanDirectory(fileRepo repository.FileRecordRepository) *ScanDirectory {
-	return &ScanDirectory{fileRepo: fileRepo}
+func NewScanDirectory(fileRepo repository.FileRecordRepository, batchSize int) *ScanDirectory {
+	return &ScanDirectory{
+		fileRepo:  fileRepo,
+		batchSize: batchSize,
+	}
 }
 
 type ScanDirectoryInput struct {
-	DirPath   string
-	BatchSize int
+	DirPath string
 }
 
 func (uc *ScanDirectory) Execute(ctx context.Context, input ScanDirectoryInput) error {
@@ -39,7 +42,7 @@ func (uc *ScanDirectory) Execute(ctx context.Context, input ScanDirectoryInput) 
 		return nil
 	}
 
-	batch := make([]*domain.FileRecord, 0, input.BatchSize)
+	batch := make([]*domain.FileRecord, 0, uc.batchSize)
 	insertBatch := func() error {
 		if len(batch) == 0 {
 			return nil
@@ -70,7 +73,8 @@ func (uc *ScanDirectory) Execute(ctx context.Context, input ScanDirectoryInput) 
 			continue
 		}
 
-		fileDomain, err := domain.NewFileRecord(entry.Name(), domain.FileRecordStatusPending)
+		fullPath := input.DirPath + string(os.PathSeparator) + entry.Name()
+		fileDomain, err := domain.NewFileRecord(entry.Name(), fullPath, domain.FileRecordStatusPending)
 		if err != nil {
 			logger.Error("failed to create FileRecord", err, map[string]interface{}{
 				"filename": entry.Name(),
@@ -79,7 +83,7 @@ func (uc *ScanDirectory) Execute(ctx context.Context, input ScanDirectoryInput) 
 		}
 
 		batch = append(batch, fileDomain)
-		if len(batch) >= input.BatchSize {
+		if len(batch) >= uc.batchSize {
 			if err := insertBatch(); err != nil {
 				return err
 			}
