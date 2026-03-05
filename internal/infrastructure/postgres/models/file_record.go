@@ -9,6 +9,7 @@ import (
 type FileRecord struct {
 	ID           int64      `db:"id,primarykey,autoincrement"`
 	Filename     string     `db:"filename,unique,notnull"`
+	FullPath     string     `db:"full_path,unique,notnull"`
 	CreatedAt    time.Time  `db:"created_at,notnull"`
 	ProcessedAt  *time.Time `db:"processed_at"`
 	Status       string     `db:"status,notnull"`
@@ -24,6 +25,7 @@ func (m *FileRecord) ToDomain() *domain.FileRecord {
 	return &domain.FileRecord{
 		ID:           m.ID,
 		Filename:     m.Filename,
+		FullPath:     m.FullPath,
 		CreatedAt:    m.CreatedAt,
 		ProcessedAt:  m.ProcessedAt,
 		Status:       domain.FileRecordStatus(m.Status),

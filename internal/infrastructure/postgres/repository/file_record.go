@@ -23,8 +23,8 @@ func (r *fileRecordRepo) Create(ctx context.Context, file *domain.FileRecord) er
 	const op = "file_record.repo.create"
 
 	query := `
-        INSERT INTO file_records (filename, status, error, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO file_records (filename, full_path, status, error, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
     `
 
@@ -36,6 +36,7 @@ func (r *fileRecordRepo) Create(ctx context.Context, file *domain.FileRecord) er
 		ctx,
 		query,
 		file.Filename,
+		file.FullPath,
 		string(file.Status),
 		file.ErrorMessage,
 		file.CreatedAt,
@@ -80,8 +81,8 @@ func (r *fileRecordRepo) BatchInsert(ctx context.Context, chunk []*domain.FileRe
 	defer tx.Rollback()
 
 	query := `
-        INSERT INTO file_records (filename, status, error, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO file_records (filename, full_path, status, error, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
     `
 
 	now := time.Now()
@@ -94,6 +95,7 @@ func (r *fileRecordRepo) BatchInsert(ctx context.Context, chunk []*domain.FileRe
 			ctx,
 			query,
 			file.Filename,
+			file.FullPath,
 			string(file.Status),
 			file.ErrorMessage,
 			file.CreatedAt,
@@ -188,7 +190,7 @@ func (r *fileRecordRepo) GetPending(ctx context.Context, batchSize int) ([]*doma
 	const op = "file_record.repo.get_pending"
 
 	query := `
-        SELECT id, filename, status, error, created_at, updated_at
+        SELECT id, filename, full_path, status, error, created_at, updated_at
         FROM file_records
         WHERE status = $1
         ORDER BY created_at
@@ -206,4 +208,21 @@ func (r *fileRecordRepo) GetPending(ctx context.Context, batchSize int) ([]*doma
 	}
 
 	return out, nil
+}
+func (r *fileRecordRepo) UpdateAttempts(ctx context.Context, fileID int64, attempts int) error {
+	const op = "file_record.repo.update_attempts"
+
+	query := `
+        UPDATE file_records
+        SET attempts = $1,
+            updated_at = NOW()
+        WHERE id = $2
+    `
+
+	_, err := r.db.ExecContext(ctx, query, attempts, fileID)
+	if err != nil {
+		return dberrs.Map(err, op)
+	}
+
+	return nil
 }

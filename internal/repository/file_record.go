@@ -13,8 +13,5 @@ type FileRecordRepository interface {
 	UpdateStatus(ctx context.Context, id int64, status domain.FileRecordStatus) error
 	MarkFailed(ctx context.Context, id int64, error string) error
 	GetPending(ctx context.Context, batchSize int) ([]*domain.FileRecord, error)
-}
-type FileQueue interface {
-	Enqueue(fileID int64) error
-	Dequeue() (fileID int64, err error)
+	UpdateAttempts(ctx context.Context, id int64, attempts int) error
 }

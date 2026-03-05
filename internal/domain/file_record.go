@@ -19,6 +19,7 @@ var (
 type FileRecord struct {
 	ID           int64
 	Filename     string
+	FullPath     string
 	ProcessedAt  *time.Time
 	CreatedAt    time.Time
 	Status       FileRecordStatus
@@ -27,13 +28,13 @@ type FileRecord struct {
 	Attempts     int
 }
 
-func NewFileRecord(fileName string, status FileRecordStatus) (*FileRecord, error) {
+func NewFileRecord(fileName, fullPath string, status FileRecordStatus) (*FileRecord, error) {
 	fileRecord := &FileRecord{
 		Filename: fileName,
+		FullPath: fullPath,
 		Status:   status,
 	}
-	var err error
-	if err = fileRecord.Validate(); err != nil {
+	if err := fileRecord.Validate(); err != nil {
 		return nil, err
 	}
 	return fileRecord, nil
@@ -43,6 +44,9 @@ func (f *FileRecord) Validate() error {
 	fields := map[string]string{}
 	if f.Filename == "" {
 		fields["filename"] = "is required"
+	}
+	if f.FullPath == "" {
+		fields["full_path"] = "is required"
 	}
 	if f.Status == "" {
 		fields["status"] = "is required"
