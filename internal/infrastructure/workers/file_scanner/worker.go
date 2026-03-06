@@ -26,7 +26,7 @@ func NewScanWorker(
 
 func (w *ScanWorker) Start(ctx context.Context) error {
 	logger.Info("scan worker started", map[string]interface{}{
-		"interval": w.interval,
+		"interval_ms": w.interval,
 	})
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()

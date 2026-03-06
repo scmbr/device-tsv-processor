@@ -29,7 +29,7 @@ func NewQueueWorker(
 
 func (w *QueueWorker) Start(ctx context.Context) error {
 	logger.Info("queue worker started", map[string]interface{}{
-		"interval": w.interval,
+		"interval_ms": w.interval,
 	})
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
