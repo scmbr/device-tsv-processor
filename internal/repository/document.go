@@ -12,4 +12,5 @@ type DocumentRepository interface {
 	UpdateStatus(ctx context.Context, id int64, status domain.DocumentStatus) error
 	GetPending(ctx context.Context, batchSize int) ([]*domain.Document, error)
 	UpdateAttempts(ctx context.Context, id int64, attempts int) error
+	IncrementAttempts(ctx context.Context, id int64) (int, error)
 }

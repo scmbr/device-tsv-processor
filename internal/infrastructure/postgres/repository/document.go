@@ -146,3 +146,22 @@ func (r *documentRepo) UpdateAttempts(ctx context.Context, id int64, attempts in
 
 	return nil
 }
+func (r *documentRepo) IncrementAttempts(ctx context.Context, documentID int64) (int, error) {
+	const op = "document.repo.increment_attempts"
+
+	query := `
+        UPDATE documents
+        SET attempts = attempts + 1,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING attempts
+    `
+
+	var updatedAttempts int
+	err := r.db.QueryRowContext(ctx, query, documentID).Scan(&updatedAttempts)
+	if err != nil {
+		return 0, dberrs.Map(err, op)
+	}
+
+	return updatedAttempts, nil
+}
