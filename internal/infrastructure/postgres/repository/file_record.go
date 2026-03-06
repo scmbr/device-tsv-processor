@@ -209,20 +209,22 @@ func (r *fileRecordRepo) GetPending(ctx context.Context, batchSize int) ([]*doma
 
 	return out, nil
 }
-func (r *fileRecordRepo) UpdateAttempts(ctx context.Context, fileID int64, attempts int) error {
-	const op = "file_record.repo.update_attempts"
+func (r *fileRecordRepo) IncrementAttempts(ctx context.Context, fileID int64) (int, error) {
+	const op = "file_record.repo.increment_attempts"
 
 	query := `
         UPDATE file_records
-        SET attempts = $1,
+        SET attempts = attempts + 1,
             updated_at = NOW()
-        WHERE id = $2
+        WHERE id = $1
+        RETURNING attempts
     `
 
-	_, err := r.db.ExecContext(ctx, query, attempts, fileID)
+	var updatedAttempts int
+	err := r.db.QueryRowContext(ctx, query, fileID).Scan(&updatedAttempts)
 	if err != nil {
-		return dberrs.Map(err, op)
+		return 0, dberrs.Map(err, op)
 	}
 
-	return nil
+	return updatedAttempts, nil
 }

@@ -13,5 +13,5 @@ type FileRecordRepository interface {
 	UpdateStatus(ctx context.Context, id int64, status domain.FileRecordStatus) error
 	MarkFailed(ctx context.Context, id int64, error string) error
 	GetPending(ctx context.Context, batchSize int) ([]*domain.FileRecord, error)
-	UpdateAttempts(ctx context.Context, id int64, attempts int) error
+	IncrementAttempts(ctx context.Context, id int64) (int, error)
 }
