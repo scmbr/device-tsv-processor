@@ -2,77 +2,127 @@ package file_processor
 
 import (
 	"context"
+	"sync"
 
-	"github.com/scmbr/device-tsv-processor/internal/domain"
 	"github.com/scmbr/device-tsv-processor/internal/queue"
-	"github.com/scmbr/device-tsv-processor/internal/repository"
 	"github.com/scmbr/device-tsv-processor/internal/usecase"
 	"github.com/scmbr/device-tsv-processor/pkg/logger"
 )
 
 type ProcessWorker struct {
-	processUC   *usecase.ProcessFile
-	fileRepo    repository.FileRecordRepository
-	queue       queue.FileQueue
-	maxAttempts int
+	processUC           *usecase.ProcessFile
+	incrementAttemptsUC *usecase.IncrementFileAttempts
+	markErrorUC         *usecase.MarkFileAsError
+	queue               queue.FileQueue
+	maxAttempts         int
+}
+
+type TaskResult struct {
+	Task  queue.FileTask
+	Error error
 }
 
 func NewProcessWorker(
 	processUC *usecase.ProcessFile,
-	fileRepo repository.FileRecordRepository,
+	incrementAttemptsUC *usecase.IncrementFileAttempts,
+	markErrorUC *usecase.MarkFileAsError,
 	queue queue.FileQueue,
 	maxAttempts int,
-	enqueueUC *usecase.EnqueueDocumentGenerating,
 ) *ProcessWorker {
 	return &ProcessWorker{
-		processUC:   processUC,
-		fileRepo:    fileRepo,
-		queue:       queue,
-		maxAttempts: maxAttempts,
+		processUC:           processUC,
+		incrementAttemptsUC: incrementAttemptsUC,
+		markErrorUC:         markErrorUC,
+		queue:               queue,
+		maxAttempts:         maxAttempts,
 	}
 }
 
-func (w *ProcessWorker) Start(ctx context.Context) error {
+func (w *ProcessWorker) StartPool(ctx context.Context, workerCount int) error {
+	logger.Info("process worker pool started", map[string]interface{}{
+		"workers": workerCount,
+	})
+
 	tasks, err := w.queue.Consume(ctx)
 	if err != nil {
 		return err
 	}
 
-	for dt := range tasks {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
+	results := make(chan TaskResult)
+	var wg sync.WaitGroup
 
-		if err := w.handleTask(ctx, dt); err != nil {
-			w.queue.Nack(ctx, dt, true)
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case task, ok := <-tasks:
+					if !ok {
+						return
+					}
+					res := w.handleTask(ctx, task, workerID)
+					results <- res
+				}
+			}
+		}(i)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for res := range results {
+		if res.Error != nil {
+			if res.Error == context.Canceled {
+				logger.Info("task canceled due to context", map[string]interface{}{
+					"fileID": res.Task.FileID,
+				})
+				continue
+			}
+
+			w.queue.Nack(ctx, res.Task, true)
+			logger.Error("file processing failed", res.Error, map[string]interface{}{
+				"fileID": res.Task.FileID,
+				"path":   res.Task.FullPath,
+			})
 			continue
 		}
 
-		w.queue.Ack(ctx, dt)
+		w.queue.Ack(ctx, res.Task)
 	}
 
+	logger.Info("process worker pool stopped", nil)
 	return nil
 }
 
-func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask) error {
-
-	if t.Attempts >= w.maxAttempts {
-		logger.Error("file reached max attempts, marking as error", nil, map[string]interface{}{
-			"fileID":   t.FileID,
-			"path":     t.FullPath,
-			"attempts": t.Attempts,
-		})
-
-		_ = w.fileRepo.UpdateStatus(ctx, t.FileID, domain.FileRecordStatusError)
-		return nil
+func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask, workerID int) TaskResult {
+	select {
+	case <-ctx.Done():
+		return TaskResult{Task: t, Error: ctx.Err()}
+	default:
 	}
 
-	t.Attempts++
-	if err := w.fileRepo.UpdateAttempts(ctx, t.FileID, t.Attempts); err != nil {
-		logger.Error("failed to update attempts", err, map[string]interface{}{
-			"fileID": t.FileID,
-		})
-		return err
+	updatedAttempts, err := w.incrementAttemptsUC.Execute(ctx, usecase.IncrementFileAttemptsInput{
+		FileID: t.FileID,
+	})
+	if err != nil {
+		return TaskResult{Task: t, Error: err}
+	}
+
+	if updatedAttempts > w.maxAttempts {
+		if err := w.markErrorUC.Execute(ctx, usecase.MarkFileAsErrorInput{
+			FileID:   t.FileID,
+			Attempts: updatedAttempts,
+		}); err != nil {
+			logger.Error("failed to mark file as error", err, map[string]interface{}{
+				"fileID": t.FileID,
+			})
+		}
+		return TaskResult{Task: t, Error: nil}
 	}
 
 	input := usecase.ProcessFileInput{
@@ -81,18 +131,14 @@ func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask) error 
 	}
 
 	if err := w.processUC.Execute(ctx, input); err != nil {
-		logger.Error("failed to process file", err, map[string]interface{}{
-			"fileID":  t.FileID,
-			"path":    t.FullPath,
-			"attempt": t.Attempts,
-		})
-		return err
+		return TaskResult{Task: t, Error: err}
 	}
+
 	logger.Info("file processed successfully", map[string]interface{}{
-		"fileID":  t.FileID,
-		"path":    t.FullPath,
-		"attempt": t.Attempts,
+		"fileID":   t.FileID,
+		"path":     t.FullPath,
+		"workerID": workerID,
 	})
 
-	return nil
+	return TaskResult{Task: t, Error: nil}
 }
