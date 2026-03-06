@@ -9,35 +9,33 @@ import (
 )
 
 type ScanWorker struct {
-	scanUC    *usecase.ScanDirectory
-	dirPath   string
-	batchSize int
-	interval  time.Duration
+	scanUC *usecase.ScanDirectory
+
+	interval time.Duration
 }
 
 func NewScanWorker(
 	scanUC *usecase.ScanDirectory,
-	dirPath string,
-	batchSize int,
 	interval time.Duration,
 ) *ScanWorker {
 	return &ScanWorker{
-		scanUC:    scanUC,
-		dirPath:   dirPath,
-		batchSize: batchSize,
-		interval:  interval,
+		scanUC:   scanUC,
+		interval: interval,
 	}
 }
 
-func (w *ScanWorker) Start(ctx context.Context) {
+func (w *ScanWorker) Start(ctx context.Context) error {
+	logger.Info("scan worker started", map[string]interface{}{
+		"interval": w.interval,
+	})
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
-
+	w.scanOnce(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			logger.Info("scan worker stopped", nil)
-			return
+			return ctx.Err()
 		case <-ticker.C:
 			w.scanOnce(ctx)
 		}
@@ -45,19 +43,17 @@ func (w *ScanWorker) Start(ctx context.Context) {
 }
 
 func (w *ScanWorker) scanOnce(ctx context.Context) {
-	input := usecase.ScanDirectoryInput{
-		DirPath: w.dirPath,
-	}
+	scanCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
-	err := w.scanUC.Execute(ctx, input)
-	if err != nil {
+	start := time.Now()
+	if err := w.scanUC.Execute(scanCtx); err != nil {
 		logger.Error("scan directory failed", err, map[string]interface{}{
-			"directory": w.dirPath,
+			"duration_ms": time.Since(start).Milliseconds(),
 		})
 		return
 	}
-
-	logger.Info("directory scanned successfully", map[string]interface{}{
-		"directory": w.dirPath,
+	logger.Info("scan directory completed", map[string]interface{}{
+		"duration_ms": time.Since(start).Milliseconds(),
 	})
 }

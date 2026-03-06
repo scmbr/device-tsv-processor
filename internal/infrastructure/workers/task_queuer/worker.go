@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/scmbr/device-tsv-processor/internal/usecase"
+	"github.com/scmbr/device-tsv-processor/pkg/logger"
 )
 
 type QueueWorker struct {
@@ -26,12 +27,17 @@ func NewQueueWorker(
 }
 
 func (w *QueueWorker) Start(ctx context.Context) error {
+	logger.Info("queue worker started", map[string]interface{}{
+		"interval": w.interval,
+	})
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
 
+	w.runOnce(ctx)
 	for {
 		select {
 		case <-ctx.Done():
+			logger.Info("queue worker stopped", nil)
 			return ctx.Err()
 
 		case <-ticker.C:
@@ -41,11 +47,16 @@ func (w *QueueWorker) Start(ctx context.Context) error {
 }
 
 func (w *QueueWorker) runOnce(ctx context.Context) {
-	if w.fileEnqueueUC != nil {
-		_ = w.fileEnqueueUC.Execute(ctx)
+	fileCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+
+	defer cancel()
+	if err := w.fileEnqueueUC.Execute(fileCtx); err != nil {
+		logger.Error("enqueue file failed", err, nil)
 	}
 
-	if w.documentEnqueueUC != nil {
-		_ = w.documentEnqueueUC.Execute(ctx)
+	docCtx, cancelDoc := context.WithTimeout(ctx, 30*time.Second)
+	defer cancelDoc()
+	if err := w.documentEnqueueUC.Execute(docCtx); err != nil {
+		logger.Error("enqueue document failed", err, nil)
 	}
 }
