@@ -1,4 +1,4 @@
-CREATE TABLE file_record (
+CREATE TABLE file_records (
     id SERIAL PRIMARY KEY,
     filename TEXT UNIQUE NOT NULL,
     full_path TEXT UNIQUE NOT NULL,

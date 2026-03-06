@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS file_record;
+DROP TABLE IF EXISTS file_records;

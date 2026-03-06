@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS device_message;
+DROP TABLE IF EXISTS device_messages;

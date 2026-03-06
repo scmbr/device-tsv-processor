@@ -1,4 +1,4 @@
-CREATE TABLE document (
+CREATE TABLE documents (
     id SERIAL PRIMARY KEY,
     unit_guid TEXT NOT NULL,
     file_path TEXT,

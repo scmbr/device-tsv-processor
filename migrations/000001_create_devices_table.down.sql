@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS device;
+DROP TABLE IF EXISTS devices;

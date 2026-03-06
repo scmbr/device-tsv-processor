@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS parse_error_model;
+DROP TABLE IF EXISTS parse_errors;

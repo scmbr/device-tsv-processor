@@ -1,4 +1,4 @@
-CREATE TABLE device (
+CREATE TABLE devices (
     id SERIAL PRIMARY KEY,
     unit_guid TEXT UNIQUE NOT NULL,
     inv_id TEXT NOT NULL,
