@@ -4,18 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/scmbr/device-tsv-processor/internal/usecase"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/file"
 	"github.com/scmbr/device-tsv-processor/pkg/logger"
 )
 
 type ScanWorker struct {
-	scanUC *usecase.ScanDirectory
+	scanUC *file.ScanDirectory
 
 	interval time.Duration
 }
 
 func NewScanWorker(
-	scanUC *usecase.ScanDirectory,
+	scanUC *file.ScanDirectory,
 	interval time.Duration,
 ) *ScanWorker {
 	return &ScanWorker{

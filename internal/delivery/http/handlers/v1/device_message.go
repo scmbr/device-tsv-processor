@@ -8,14 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/scmbr/device-tsv-processor/internal/domain"
 	"github.com/scmbr/device-tsv-processor/internal/errs"
-	"github.com/scmbr/device-tsv-processor/internal/usecase"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/device_message"
 )
 
 type DeviceMessagesHandler struct {
-	get_uc usecase.GetDeviceMessages
+	get_uc device_message.GetDeviceMessages
 }
 
-func NewDeviceMessageHandler(get_uc usecase.GetDeviceMessages) *DeviceMessagesHandler {
+func NewDeviceMessageHandler(get_uc device_message.GetDeviceMessages) *DeviceMessagesHandler {
 	return &DeviceMessagesHandler{get_uc: get_uc}
 }
 
@@ -85,7 +85,7 @@ func (h *DeviceMessagesHandler) ListByGUID(ctx *gin.Context) {
 		ctx.Error(errs.E(errs.KindInvalid, "INVALID_OFFSET", op, "invalid offset", map[string]string{"offset": "is not valid"}, nil))
 		return
 	}
-	messages, total, err := h.get_uc.Execute(ctx.Request.Context(), usecase.GetDeviceMessagesInput{
+	messages, total, err := h.get_uc.Execute(ctx.Request.Context(), device_message.GetDeviceMessagesInput{
 		Limit:  limit,
 		Offset: offset,
 		GUID:   guid,

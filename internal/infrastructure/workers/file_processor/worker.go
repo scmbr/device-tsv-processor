@@ -5,14 +5,14 @@ import (
 	"sync"
 
 	"github.com/scmbr/device-tsv-processor/internal/queue"
-	"github.com/scmbr/device-tsv-processor/internal/usecase"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/file"
 	"github.com/scmbr/device-tsv-processor/pkg/logger"
 )
 
 type ProcessWorker struct {
-	processUC           *usecase.ProcessFile
-	incrementAttemptsUC *usecase.IncrementFileAttempts
-	markErrorUC         *usecase.MarkFileAsError
+	processUC           *file.ProcessFile
+	incrementAttemptsUC *file.IncrementFileAttempts
+	markErrorUC         *file.MarkFileAsError
 	queue               queue.FileQueue
 	maxAttempts         int
 }
@@ -23,9 +23,9 @@ type TaskResult struct {
 }
 
 func NewProcessWorker(
-	processUC *usecase.ProcessFile,
-	incrementAttemptsUC *usecase.IncrementFileAttempts,
-	markErrorUC *usecase.MarkFileAsError,
+	processUC *file.ProcessFile,
+	incrementAttemptsUC *file.IncrementFileAttempts,
+	markErrorUC *file.MarkFileAsError,
 	queue queue.FileQueue,
 	maxAttempts int,
 ) *ProcessWorker {
@@ -106,7 +106,7 @@ func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask, worker
 	default:
 	}
 
-	updatedAttempts, err := w.incrementAttemptsUC.Execute(ctx, usecase.IncrementFileAttemptsInput{
+	updatedAttempts, err := w.incrementAttemptsUC.Execute(ctx, file.IncrementFileAttemptsInput{
 		FileID: t.FileID,
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask, worker
 	}
 
 	if updatedAttempts > w.maxAttempts {
-		if err := w.markErrorUC.Execute(ctx, usecase.MarkFileAsErrorInput{
+		if err := w.markErrorUC.Execute(ctx, file.MarkFileAsErrorInput{
 			FileID:   t.FileID,
 			Attempts: updatedAttempts,
 		}); err != nil {
@@ -125,7 +125,7 @@ func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask, worker
 		return TaskResult{Task: t, Error: nil}
 	}
 
-	input := usecase.ProcessFileInput{
+	input := file.ProcessFileInput{
 		FileID: t.FileID,
 		Path:   t.FullPath,
 	}

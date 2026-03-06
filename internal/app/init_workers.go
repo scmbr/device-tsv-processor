@@ -20,25 +20,25 @@ type Workers struct {
 func initWorkers(cfg *config.Config, ucs *usecase.UseCases, queues *queue.Queues) *Workers {
 	return &Workers{
 		Scan: file_scanner.NewScanWorker(
-			ucs.ScanDirectory,
+			ucs.File.ScanDirectory,
 			cfg.Workers.ScanDirectoryInterval,
 		),
 		Process: file_processor.NewProcessWorker(
-			ucs.ProcessFile,
-			ucs.IncrementFileAttempts,
-			ucs.MarkFileAsError,
+			ucs.File.ProcessFile,
+			ucs.File.IncrementFileAttempts,
+			ucs.File.MarkFileAsError,
 			queues.FileQueue,
 			cfg.MaxAttempts,
 		),
 		Queue: task_queuer.NewQueueWorker(
-			ucs.EnqueueFileProcessing,
-			ucs.EnqueueDocumentGenerating,
+			ucs.File.EnqueueFileProcessing,
+			ucs.Document.EnqueueDocumentGenerating,
 			cfg.Workers.EnqueueTasksInterval,
 		),
 		Generator: document_generator.NewGeneratorWorker(
-			ucs.GenerateDocument,
-			ucs.IncrementDocumentAttempts,
-			ucs.MarkDocumentAsError,
+			ucs.Document.GenerateDocument,
+			ucs.Document.IncrementDocumentAttempts,
+			ucs.Document.MarkDocumentAsError,
 			queues.DocumentQueue,
 			cfg.MaxAttempts,
 		),

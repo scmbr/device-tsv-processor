@@ -3,19 +3,32 @@ package usecase
 import (
 	"github.com/scmbr/device-tsv-processor/internal/infrastructure/postgres/repository"
 	"github.com/scmbr/device-tsv-processor/internal/infrastructure/rabbitmq/queue"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/device_message"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/document"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/file"
 )
 
 type UseCases struct {
-	EnqueueFileProcessing     *EnqueueFileProcessing
-	GenerateDocument          *GenerateDocument
-	GetDeviceMessages         *GetDeviceMessages
-	ProcessFile               *ProcessFile
-	ScanDirectory             *ScanDirectory
-	EnqueueDocumentGenerating *EnqueueDocumentGenerating
-	MarkFileAsError           *MarkFileAsError
-	IncrementFileAttempts     *IncrementFileAttempts
-	MarkDocumentAsError       *MarkDocumentAsError
-	IncrementDocumentAttempts *IncrementDocumentAttempts
+	Document      *DocumentUseCases
+	File          *FileUseCases
+	DeviceMessage *DeviceMessageUseCases
+}
+type DocumentUseCases struct {
+	EnqueueDocumentGenerating *document.EnqueueDocumentGenerating
+	GenerateDocument          *document.GenerateDocument
+	MarkDocumentAsError       *document.MarkDocumentAsError
+	IncrementDocumentAttempts *document.IncrementDocumentAttempts
+}
+type FileUseCases struct {
+	EnqueueFileProcessing *file.EnqueueFileProcessing
+	ProcessFile           *file.ProcessFile
+	ScanDirectory         *file.ScanDirectory
+
+	MarkFileAsError       *file.MarkFileAsError
+	IncrementFileAttempts *file.IncrementFileAttempts
+}
+type DeviceMessageUseCases struct {
+	GetDeviceMessages *device_message.GetDeviceMessages
 }
 type UseCaseConfig struct {
 	Repos        *repository.Repositories
@@ -23,55 +36,62 @@ type UseCaseConfig struct {
 	BatchSize    int
 	OutputDir    string
 	InputDir     string
-	PDFGenerator PDFGenerator
-	Parser       TSVParser
+	PDFGenerator document.PDFGenerator
+	Parser       file.TSVParser
 	MaxAttempts  int
 }
 
 func NewUseCases(cfg UseCaseConfig) *UseCases {
 	return &UseCases{
-		EnqueueFileProcessing: NewEnqueueFileProcessing(
-			cfg.Repos.FileRecordRepository,
-			cfg.Queues.FileQueue,
-			cfg.BatchSize,
-			cfg.MaxAttempts,
-		),
-		GenerateDocument: NewGenerateDocument(
-			cfg.Repos.DeviceMessageRepository,
-			cfg.Repos.ParseErrorRepository,
-			cfg.OutputDir,
-			cfg.PDFGenerator,
-		),
-		GetDeviceMessages: NewGetDeviceMessages(cfg.Repos.DeviceMessageRepository),
-		ProcessFile: NewProcessFile(
-			cfg.Repos.FileRecordRepository,
-			cfg.Repos.DeviceMessageRepository,
-			cfg.Repos.ParseErrorRepository,
-			cfg.Repos.TxManager,
-			cfg.Parser,
-		),
-		ScanDirectory: NewScanDirectory(
-			cfg.Repos.FileRecordRepository,
-			cfg.InputDir,
-			cfg.BatchSize,
-		),
-		EnqueueDocumentGenerating: NewEnqueueDocumentProcessing(
-			cfg.Repos.DocumentRepository,
-			cfg.Queues.DocumentQueue,
-			cfg.BatchSize,
-			cfg.MaxAttempts,
-		),
-		MarkFileAsError: NewMarkFileAsError(
-			cfg.Repos.FileRecordRepository,
-		),
-		IncrementFileAttempts: NewIncrementFileAttempts(
-			cfg.Repos.FileRecordRepository,
-		),
-		MarkDocumentAsError: NewMarkDocumentAsError(
-			cfg.Repos.DocumentRepository,
-		),
-		IncrementDocumentAttempts: NewIncrementDocumentAttempts(
-			cfg.Repos.DocumentRepository,
-		),
+		Document: &DocumentUseCases{
+			GenerateDocument: document.NewGenerateDocument(
+				cfg.Repos.DeviceMessageRepository,
+				cfg.Repos.ParseErrorRepository,
+				cfg.OutputDir,
+				cfg.PDFGenerator,
+			),
+			EnqueueDocumentGenerating: document.NewEnqueueDocumentProcessing(
+				cfg.Repos.DocumentRepository,
+				cfg.Queues.DocumentQueue,
+				cfg.BatchSize,
+				cfg.MaxAttempts,
+			),
+
+			MarkDocumentAsError: document.NewMarkDocumentAsError(
+				cfg.Repos.DocumentRepository,
+			),
+			IncrementDocumentAttempts: document.NewIncrementDocumentAttempts(
+				cfg.Repos.DocumentRepository,
+			),
+		},
+		File: &FileUseCases{
+			EnqueueFileProcessing: file.NewEnqueueFileProcessing(
+				cfg.Repos.FileRecordRepository,
+				cfg.Queues.FileQueue,
+				cfg.BatchSize,
+				cfg.MaxAttempts,
+			),
+			ProcessFile: file.NewProcessFile(
+				cfg.Repos.FileRecordRepository,
+				cfg.Repos.DeviceMessageRepository,
+				cfg.Repos.ParseErrorRepository,
+				cfg.Repos.TxManager,
+				cfg.Parser,
+			),
+			ScanDirectory: file.NewScanDirectory(
+				cfg.Repos.FileRecordRepository,
+				cfg.InputDir,
+				cfg.BatchSize,
+			),
+			MarkFileAsError: file.NewMarkFileAsError(
+				cfg.Repos.FileRecordRepository,
+			),
+			IncrementFileAttempts: file.NewIncrementFileAttempts(
+				cfg.Repos.FileRecordRepository,
+			),
+		},
+		DeviceMessage: &DeviceMessageUseCases{
+			GetDeviceMessages: device_message.NewGetDeviceMessages(cfg.Repos.DeviceMessageRepository),
+		},
 	}
 }
