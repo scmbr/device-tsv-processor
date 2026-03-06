@@ -32,6 +32,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
 
   backend:
     build:
@@ -45,18 +47,16 @@ services:
       rabbit:
         condition: service_healthy
     environment:
-      APP_ENV: "${APP_ENV:-local}"
+      APP_ENV: "${APP_ENV:-prod}"
       POSTGRES_USER: "${POSTGRES_USER:-user}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
       POSTGRES_DB: "${POSTGRES_DB:-db}"
-      REDIS_PASSWORD: "${REDIS_PASSWORD:-geochecker}"
       RABBIT_USERNAME: "${RABBIT_USERNAME:-guest}"
       RABBIT_PASSWORD: "${RABBIT_PASSWORD:-guest}"
       RABBIT_VHOST: "${RABBIT_VHOST:-/}"
-      API_KEY_SECRET: "${API_KEY_SECRET:-geochecker}"
-      WEBHOOK_URL: "${WEBHOOK_URL:-}"
     volumes:
       - ./configs:/app/configs:ro
+      - ./.env:/app/.env:ro
 
   migrate: 
     image: migrate/migrate 
@@ -75,3 +75,4 @@ services:
 
 volumes:
   postgres_data:
+  rabbit_data:
