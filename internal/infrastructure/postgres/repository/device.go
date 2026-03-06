@@ -25,7 +25,7 @@ func (r *deviceRepo) GetByUnitGUID(ctx context.Context, unitGUID string) (*domai
 	var m models.Device
 	query := `
         SELECT id, unit_guid, inv_id, mqtt, status, processed_at, created_at
-        FROM device
+        FROM devices
         WHERE unit_guid = $1
     `
 	if err := r.db.GetContext(ctx, &m, query, unitGUID); err != nil {
@@ -39,7 +39,7 @@ func (r *deviceRepo) Create(ctx context.Context, device *domain.Device) (*domain
 	const op = "device.repo.create"
 
 	query := `
-        INSERT INTO device (unit_guid, inv_id, mqtt, status, processed_at, created_at)
+        INSERT INTO devices (unit_guid, inv_id, mqtt, status, processed_at, created_at)
         VALUES ($1,$2,$3,$4,$5,$6)
         RETURNING id
     `

@@ -28,7 +28,7 @@ func (r *deviceMessageRepo) GetByDeviceGUID(ctx context.Context, deviceGUID stri
 	sb.WriteString(`
         SELECT id, device_id, inv_id, msg_id, text, context, class, level, area,
                addr, block, type, bit, invert_bit, created_at
-        FROM device_message
+        FROM device_messages
         WHERE device_id = (
             SELECT id FROM device WHERE unit_guid = $1
         )
@@ -52,7 +52,7 @@ func (r *deviceMessageRepo) GetByDeviceGUID(ctx context.Context, deviceGUID stri
 
 	var total int
 	if err := r.db.GetContext(ctx, &total,
-		"SELECT COUNT(*) FROM device_message WHERE device_id = (SELECT id FROM device WHERE unit_guid = $1)",
+		"SELECT COUNT(*) FROM device_messages WHERE device_id = (SELECT id FROM device WHERE unit_guid = $1)",
 		deviceGUID,
 	); err != nil {
 		return nil, 0, dberrs.Map(err, op)
@@ -101,7 +101,7 @@ func (r *deviceMessageRepo) BulkInsert(ctx context.Context, messages []*domain.D
 	}
 
 	query := fmt.Sprintf(`
-        INSERT INTO device_message (
+        INSERT INTO device_messages (
             device_id, inv_id, msg_id, text, context, class, level, area,
             addr, block, type, bit, invert_bit, created_at
         ) VALUES %s
