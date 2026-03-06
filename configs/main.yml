@@ -1,0 +1,33 @@
+environment: "local"
+
+postgres:
+  host: "localhost"
+  port: 5432
+  sslmode: "disable"
+
+rabbit:
+  host: "localhost"
+  port: 5672
+  file_queue_name: "file_queue"
+  document_queue_name: "document_queue"
+
+http:
+  host: "localhost"
+  port: 8080
+  read_timeout: 5s
+  write_timeout: 5s
+  max_header_bytes: 1048576
+
+batch_size: 100
+
+dir:
+  input_dir: "input"
+  output_dir: "output"
+
+workers:
+  generator_workers_count: 5
+  process_workers_count: 5
+  scan_directory_interval: 10s
+  enqueue_tasks_interval: 5s
+
+max_attempts: 3
