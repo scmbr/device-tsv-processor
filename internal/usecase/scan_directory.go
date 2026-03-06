@@ -13,31 +13,29 @@ import (
 
 type ScanDirectory struct {
 	fileRepo  repository.FileRecordRepository
+	dirPath   string
 	batchSize int
 }
 
-func NewScanDirectory(fileRepo repository.FileRecordRepository, batchSize int) *ScanDirectory {
+func NewScanDirectory(fileRepo repository.FileRecordRepository, inputDir string, batchSize int) *ScanDirectory {
 	return &ScanDirectory{
 		fileRepo:  fileRepo,
 		batchSize: batchSize,
+		dirPath:   inputDir,
 	}
 }
 
-type ScanDirectoryInput struct {
-	DirPath string
-}
-
-func (uc *ScanDirectory) Execute(ctx context.Context, input ScanDirectoryInput) error {
+func (uc *ScanDirectory) Execute(ctx context.Context) error {
 	const op = "usecase.scan_directory"
 
-	dirEntries, err := os.ReadDir(input.DirPath)
+	dirEntries, err := os.ReadDir(uc.dirPath)
 	if err != nil {
 		return errs.Wrap(op, err)
 	}
 
 	if len(dirEntries) == 0 {
 		logger.Info("no files found in directory", map[string]interface{}{
-			"directory_path": input.DirPath,
+			"directory_path": uc.dirPath,
 		})
 		return nil
 	}
@@ -73,7 +71,7 @@ func (uc *ScanDirectory) Execute(ctx context.Context, input ScanDirectoryInput) 
 			continue
 		}
 
-		fullPath := input.DirPath + string(os.PathSeparator) + entry.Name()
+		fullPath := uc.dirPath + string(os.PathSeparator) + entry.Name()
 		fileDomain, err := domain.NewFileRecord(entry.Name(), fullPath, domain.FileRecordStatusPending)
 		if err != nil {
 			logger.Error("failed to create FileRecord", err, map[string]interface{}{
