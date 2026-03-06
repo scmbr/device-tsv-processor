@@ -11,13 +11,18 @@ type UseCases struct {
 	GetDeviceMessages         *GetDeviceMessages
 	ProcessFile               *ProcessFile
 	ScanDirectory             *ScanDirectory
-	EnqueueDocumentProcessing *EnqueueDocumentGenerating
+	EnqueueDocumentGenerating *EnqueueDocumentGenerating
+	MarkFileAsError           *MarkFileAsError
+	IncrementFileAttempts     *IncrementFileAttempts
+	MarkDocumentAsError       *MarkDocumentAsError
+	IncrementDocumentAttempts *IncrementDocumentAttempts
 }
 type UseCaseConfig struct {
 	Repos        *repository.Repositories
 	Queues       *queue.Queues
 	BatchSize    int
 	OutputDir    string
+	InputDir     string
 	PDFGenerator PDFGenerator
 	Parser       TSVParser
 	MaxAttempts  int
@@ -47,13 +52,26 @@ func NewUseCases(cfg UseCaseConfig) *UseCases {
 		),
 		ScanDirectory: NewScanDirectory(
 			cfg.Repos.FileRecordRepository,
+			cfg.InputDir,
 			cfg.BatchSize,
 		),
-		EnqueueDocumentProcessing: NewEnqueueDocumentProcessing(
+		EnqueueDocumentGenerating: NewEnqueueDocumentProcessing(
 			cfg.Repos.DocumentRepository,
 			cfg.Queues.DocumentQueue,
 			cfg.BatchSize,
 			cfg.MaxAttempts,
+		),
+		MarkFileAsError: NewMarkFileAsError(
+			cfg.Repos.FileRecordRepository,
+		),
+		IncrementFileAttempts: NewIncrementFileAttempts(
+			cfg.Repos.FileRecordRepository,
+		),
+		MarkDocumentAsError: NewMarkDocumentAsError(
+			cfg.Repos.DocumentRepository,
+		),
+		IncrementDocumentAttempts: NewIncrementDocumentAttempts(
+			cfg.Repos.DocumentRepository,
 		),
 	}
 }
