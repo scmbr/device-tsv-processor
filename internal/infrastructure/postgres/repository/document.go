@@ -165,3 +165,68 @@ func (r *documentRepo) IncrementAttempts(ctx context.Context, documentID int64) 
 
 	return updatedAttempts, nil
 }
+func (r *documentRepo) CreateIfNotExists(ctx context.Context, doc *domain.Document) (*domain.Document, error) {
+	const op = "document.repo.create_if_not_exists"
+
+	existing, err := r.GetByUnitGUID(ctx, doc.UnitGUID)
+	if err == nil {
+		return existing, nil
+	}
+
+	if errs.IsKind(err, errs.KindNotFound) {
+		if err := r.Create(ctx, doc); err != nil {
+			return nil, errs.Wrap(op, err)
+		}
+		return doc, nil
+	}
+
+	return nil, errs.Wrap(op, err)
+}
+func (r *documentRepo) GetByUnitGUID(ctx context.Context, unitGUID string) (*domain.Document, error) {
+	const op = "document.repo.get_by_unit_guid"
+
+	var m models.Document
+	query := `
+        SELECT id, unit_guid, file_path, file_type, status, attempts, created_at, updated_at
+        FROM documents
+        WHERE unit_guid = $1
+    `
+	if err := r.db.GetContext(ctx, &m, query, unitGUID); err != nil {
+		return nil, dberrs.Map(err, op)
+	}
+
+	return m.ToDomain(), nil
+}
+func (r *documentRepo) AddFilePath(ctx context.Context, unitGUID string, filePath string) error {
+	const op = "document.repo.add_file_path"
+
+	query := `
+        UPDATE documents
+        SET file_path = $1,
+            updated_at = $2
+        WHERE unit_guid = $3
+    `
+
+	res, err := r.db.ExecContext(ctx, query, filePath, time.Now(), unitGUID)
+	if err != nil {
+		return dberrs.Map(err, op)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return dberrs.Map(err, op)
+	}
+
+	if affected == 0 {
+		return errs.E(
+			errs.KindNotFound,
+			"DOCUMENT_NOT_FOUND",
+			op,
+			"document with given unitGUID not found",
+			nil,
+			nil,
+		)
+	}
+
+	return nil
+}

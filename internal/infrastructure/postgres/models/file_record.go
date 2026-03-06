@@ -15,6 +15,7 @@ type FileRecord struct {
 	Status       string     `db:"status,notnull"`
 	ErrorMessage *string    `db:"error_message,omitempty"`
 	UpdatedAt    *time.Time `db:"updated_at"`
+	Attempts     int        `db:"attempts"`
 }
 
 func (m *FileRecord) ToDomain() *domain.FileRecord {

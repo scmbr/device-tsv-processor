@@ -11,6 +11,8 @@ type DeviceMessage struct {
 	DeviceID  int64     `db:"device_id,notnull"`
 	InvID     string    `db:"inv_id,notnull"`
 	MsgID     string    `db:"msg_id,unique,notnull"`
+	UnitGUID  string    `db:"unit_guid"`
+	MQTT      string    `db:"mqtt"`
 	Text      string    `db:"text"`
 	Context   string    `db:"context"`
 	Class     string    `db:"class"`
@@ -32,8 +34,10 @@ func (m *DeviceMessage) ToDomain() *domain.DeviceMessage {
 	return &domain.DeviceMessage{
 		ID:        m.ID,
 		DeviceID:  m.DeviceID,
+		UnitGUID:  m.UnitGUID,
 		InvID:     m.InvID,
 		MsgID:     m.MsgID,
+		MQTT:      m.MQTT,
 		Text:      m.Text,
 		Context:   m.Context,
 		Class:     m.Class,

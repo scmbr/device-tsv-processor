@@ -26,12 +26,10 @@ func (r *deviceMessageRepo) GetByDeviceGUID(ctx context.Context, deviceGUID stri
 	var sb strings.Builder
 
 	sb.WriteString(`
-        SELECT id, device_id, inv_id, msg_id, text, context, class, level, area,
+        SELECT id, device_id, unit_guid, inv_id, msg_id, mqtt, text, context, class, level, area,
                addr, block, type, bit, invert_bit, created_at
         FROM device_messages
-        WHERE device_id = (
-            SELECT id FROM device WHERE unit_guid = $1
-        )
+        WHERE  unit_guid = $1
     `)
 	args = append(args, deviceGUID)
 
@@ -52,7 +50,7 @@ func (r *deviceMessageRepo) GetByDeviceGUID(ctx context.Context, deviceGUID stri
 
 	var total int
 	if err := r.db.GetContext(ctx, &total,
-		"SELECT COUNT(*) FROM device_messages WHERE device_id = (SELECT id FROM device WHERE unit_guid = $1)",
+		"SELECT COUNT(*) FROM device_messages WHERE device_id = (SELECT id FROM devices WHERE unit_guid = $1)",
 		deviceGUID,
 	); err != nil {
 		return nil, 0, dberrs.Map(err, op)
@@ -76,16 +74,18 @@ func (r *deviceMessageRepo) BulkInsert(ctx context.Context, messages []*domain.D
 	valueArgs := make([]interface{}, 0, len(messages)*14)
 
 	for i, m := range messages {
-		n := i * 14
+		n := i * 16
 		valueStrings = append(valueStrings,
-			fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
-				n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10, n+11, n+12, n+13, n+14,
+			fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+				n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10, n+11, n+12, n+13, n+14, n+15, n+16,
 			),
 		)
 		valueArgs = append(valueArgs,
 			m.DeviceID,
+			m.UnitGUID,
 			m.InvID,
 			m.MsgID,
+			m.MQTT,
 			m.Text,
 			m.Context,
 			m.Class,
@@ -102,7 +102,7 @@ func (r *deviceMessageRepo) BulkInsert(ctx context.Context, messages []*domain.D
 
 	query := fmt.Sprintf(`
         INSERT INTO device_messages (
-            device_id, inv_id, msg_id, text, context, class, level, area,
+            device_id, unit_guid, inv_id, msg_id, mqtt, text, context, class, level, area,
             addr, block, type, bit, invert_bit, created_at
         ) VALUES %s
     `, strings.Join(valueStrings, ","))

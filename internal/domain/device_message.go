@@ -9,7 +9,9 @@ import (
 type DeviceMessage struct {
 	ID        int64
 	DeviceID  int64
+	MQTT      string
 	InvID     string
+	UnitGUID  string
 	MsgID     string
 	Text      string
 	Context   string
@@ -25,7 +27,9 @@ type DeviceMessage struct {
 }
 
 func NewDeviceMessage(
+	unitGUID string,
 	invID string,
+	mqtt string,
 	msgID string,
 	text string,
 	context string,
@@ -38,8 +42,11 @@ func NewDeviceMessage(
 	bit int,
 	invertBit bool,
 ) (*DeviceMessage, error) {
+
 	msg := &DeviceMessage{
+		UnitGUID:  unitGUID,
 		InvID:     invID,
+		MQTT:      mqtt,
 		MsgID:     msgID,
 		Text:      text,
 		Context:   context,
@@ -58,14 +65,15 @@ func NewDeviceMessage(
 	}
 	return msg, nil
 }
-
 func (m *DeviceMessage) Validate() error {
 	const op = "device_message.entity.validate"
 
 	fields := map[string]string{}
-
 	if m.InvID == "" {
-		fields["device_guid"] = "is required"
+		fields["inv_id"] = "is required"
+	}
+	if m.UnitGUID == "" {
+		fields["guid"] = "is required"
 	}
 	if m.MsgID == "" {
 		fields["msg_id"] = "is required"

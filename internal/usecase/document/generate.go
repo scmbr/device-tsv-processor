@@ -13,6 +13,7 @@ import (
 type GenerateDocument struct {
 	messageRepo  repository.DeviceMessageRepository
 	errorRepo    repository.ParseErrorRepository
+	documentRepo repository.DocumentRepository
 	outputDir    string
 	docGenerator PDFGenerator
 }
@@ -20,12 +21,14 @@ type GenerateDocument struct {
 func NewGenerateDocument(
 	messageRepo repository.DeviceMessageRepository,
 	errorRepo repository.ParseErrorRepository,
+	documentRepo repository.DocumentRepository,
 	outputDir string,
 	docGenerator PDFGenerator,
 ) *GenerateDocument {
 	return &GenerateDocument{
 		messageRepo:  messageRepo,
 		errorRepo:    errorRepo,
+		documentRepo: documentRepo,
 		outputDir:    outputDir,
 		docGenerator: docGenerator,
 	}
@@ -48,12 +51,16 @@ func (uc *GenerateDocument) Execute(ctx context.Context, input GenerateDocumentI
 	}
 
 	outputPath := filepath.Join(uc.outputDir, fmt.Sprintf("%s.pdf", input.UnitGUID))
+
 	if err := uc.docGenerator.Generate(outputPath, messages); err != nil {
 		if pe, e := domain.NewParseError(fmt.Sprintf("doc_%s", input.UnitGUID), 0, err.Error()); e == nil {
 			_ = uc.errorRepo.BulkInsert(ctx, []*domain.ParseError{pe})
 		}
 		return errs.Wrap(op, err)
 	}
-
+	err = uc.documentRepo.AddFilePath(ctx, input.UnitGUID, outputPath)
+	if err != nil {
+		return errs.Wrap(op, err)
+	}
 	return nil
 }

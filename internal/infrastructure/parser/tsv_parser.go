@@ -83,7 +83,9 @@ func (p *TSVParser) Parse(
 		}
 
 		msg, err := domain.NewDeviceMessage(
-			fields[3],  // GUID (unit_guid)
+			fields[3],  // UnitGUID
+			fields[2],  // InvID
+			fields[1],  // MQTT
 			fields[4],  // MsgID
 			fields[5],  // Text
 			fields[6],  // Context
@@ -95,6 +97,7 @@ func (p *TSVParser) Parse(
 			fields[12], // Type
 			bit,        // Bit
 			invertBit,  // InvertBit
+
 		)
 		if err != nil {
 			if pe, e := domain.NewParseError(path, lineNumber, err.Error()); e == nil {

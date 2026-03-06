@@ -2,8 +2,9 @@ package pdf_document
 
 import (
 	"fmt"
-	"os"
+	"time"
 
+	"github.com/jung-kurt/gofpdf"
 	"github.com/scmbr/device-tsv-processor/internal/domain"
 )
 
@@ -14,18 +15,27 @@ func NewPDFGenerator() *PDFGenerator {
 }
 
 func (g *PDFGenerator) Generate(path string, messages []*domain.DeviceMessage) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.SetFont("Arial", "", 10)
+	pdf.AddPage()
 
-	for _, m := range messages {
-		_, err := f.WriteString(fmt.Sprintf("%+v\n", m))
-		if err != nil {
-			return err
-		}
+	for i, m := range messages {
+		pdf.CellFormat(0, 6, formatMessage(i+1, m), "", 1, "", false, 0, "")
 	}
 
-	return nil
+	return pdf.OutputFileAndClose(path)
+}
+
+func formatMessage(index int, m *domain.DeviceMessage) string {
+	return fmt.Sprintf(
+		"%d) ID: %d | DeviceID: %d | MQTT: %s | InvID: %s | UnitGUID: %s\n"+
+			"   MsgID: %s | Text: %s | Context: %s | Class: %s | Level: %d\n"+
+			"   Area: %s | Addr: %s | Block: %s | Type: %s | Bit: %d | InvertBit: %v\n"+
+			"   CreatedAt: %s\n",
+		index,
+		m.ID, m.DeviceID, m.MQTT, m.InvID, m.UnitGUID,
+		m.MsgID, m.Text, m.Context, m.Class, m.Level,
+		m.Area, m.Addr, m.Block, m.Type, m.Bit, m.InvertBit,
+		m.CreatedAt.Format(time.RFC3339),
+	)
 }

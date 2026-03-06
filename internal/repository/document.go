@@ -13,4 +13,7 @@ type DocumentRepository interface {
 	GetPending(ctx context.Context, batchSize int) ([]*domain.Document, error)
 	UpdateAttempts(ctx context.Context, id int64, attempts int) error
 	IncrementAttempts(ctx context.Context, id int64) (int, error)
+	CreateIfNotExists(ctx context.Context, device *domain.Document) (*domain.Document, error)
+	GetByUnitGUID(ctx context.Context, unitGUID string) (*domain.Document, error)
+	AddFilePath(ctx context.Context, unitGUID string, filePAth string) error
 }

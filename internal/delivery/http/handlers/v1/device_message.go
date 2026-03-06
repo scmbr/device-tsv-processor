@@ -12,10 +12,10 @@ import (
 )
 
 type DeviceMessagesHandler struct {
-	get_uc device_message.GetDeviceMessages
+	get_uc *device_message.GetDeviceMessages
 }
 
-func NewDeviceMessageHandler(get_uc device_message.GetDeviceMessages) *DeviceMessagesHandler {
+func NewDeviceMessageHandler(get_uc *device_message.GetDeviceMessages) *DeviceMessagesHandler {
 	return &DeviceMessagesHandler{get_uc: get_uc}
 }
 

@@ -77,7 +77,6 @@ func Wrap(op string, err error) error {
 		Kind: KindInternal,
 		Code: "INTERNAL",
 		Op:   op,
-		Msg:  "internal error",
 		Err:  err,
 	}
 }

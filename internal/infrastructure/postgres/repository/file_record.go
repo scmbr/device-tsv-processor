@@ -23,7 +23,7 @@ func (r *fileRecordRepo) Create(ctx context.Context, file *domain.FileRecord) er
 	const op = "file_record.repo.create"
 
 	query := `
-        INSERT INTO file_records (filename, full_path, status, error, created_at, updated_at)
+        INSERT INTO file_records (filename, full_path, status, error_message, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
     `
@@ -81,7 +81,7 @@ func (r *fileRecordRepo) BatchInsert(ctx context.Context, chunk []*domain.FileRe
 	defer tx.Rollback()
 
 	query := `
-        INSERT INTO file_records (filename, full_path, status, error, created_at, updated_at)
+        INSERT INTO file_records (filename, full_path, status, error_message, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6)
     `
 
@@ -151,7 +151,7 @@ func (r *fileRecordRepo) MarkFailed(ctx context.Context, id int64, errorMsg stri
 	query := `
         UPDATE file_records
         SET status = $1,
-            error = $2,
+            error_message = $2,
             updated_at = $3
         WHERE id = $4
     `
@@ -190,7 +190,7 @@ func (r *fileRecordRepo) GetPending(ctx context.Context, batchSize int) ([]*doma
 	const op = "file_record.repo.get_pending"
 
 	query := `
-        SELECT id, filename, full_path, status, error, created_at, updated_at
+        SELECT id, filename, full_path, status, error_message, created_at, updated_at
         FROM file_records
         WHERE status = $1
         ORDER BY created_at

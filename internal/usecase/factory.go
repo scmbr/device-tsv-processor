@@ -47,6 +47,7 @@ func NewUseCases(cfg UseCaseConfig) *UseCases {
 			GenerateDocument: document.NewGenerateDocument(
 				cfg.Repos.DeviceMessageRepository,
 				cfg.Repos.ParseErrorRepository,
+				cfg.Repos.DocumentRepository,
 				cfg.OutputDir,
 				cfg.PDFGenerator,
 			),
@@ -74,7 +75,9 @@ func NewUseCases(cfg UseCaseConfig) *UseCases {
 			ProcessFile: file.NewProcessFile(
 				cfg.Repos.FileRecordRepository,
 				cfg.Repos.DeviceMessageRepository,
+				cfg.Repos.DeviceRepository,
 				cfg.Repos.ParseErrorRepository,
+				cfg.Repos.DocumentRepository,
 				cfg.Repos.TxManager,
 				cfg.Parser,
 			),
