@@ -57,6 +57,8 @@ services:
     volumes:
       - ./configs:/app/configs:ro
       - ./.env:/app/.env:ro
+      - ./input:/app/input
+      - ./output:/app/output
 
   migrate: 
     image: migrate/migrate 
