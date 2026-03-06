@@ -1,4 +1,4 @@
-package usecase
+package document
 
 import (
 	"context"

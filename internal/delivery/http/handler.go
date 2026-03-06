@@ -23,7 +23,7 @@ func (h *Handler) Init() *gin.Engine {
 }
 func (h *Handler) initAPI(router *gin.Engine) {
 	v1 := router.Group("/api/v1")
-	deviceMessagesHandler := v1_handlers.NewDeviceMessageHandler(*h.ucs.GetDeviceMessages)
+	deviceMessagesHandler := v1_handlers.NewDeviceMessageHandler(*h.ucs.DeviceMessage.GetDeviceMessages)
 	messages := v1.Group("/messages")
 	{
 		messages.GET("/:guid", deviceMessagesHandler.ListByGUID)

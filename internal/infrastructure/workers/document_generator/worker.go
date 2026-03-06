@@ -5,14 +5,14 @@ import (
 	"sync"
 
 	"github.com/scmbr/device-tsv-processor/internal/queue"
-	"github.com/scmbr/device-tsv-processor/internal/usecase"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/document"
 	"github.com/scmbr/device-tsv-processor/pkg/logger"
 )
 
 type GeneratorWorker struct {
-	generateUC          *usecase.GenerateDocument
-	incrementAttemptsUC *usecase.IncrementDocumentAttempts
-	markErrorUC         *usecase.MarkDocumentAsError
+	generateUC          *document.GenerateDocument
+	incrementAttemptsUC *document.IncrementDocumentAttempts
+	markErrorUC         *document.MarkDocumentAsError
 	queue               queue.DocumentQueue
 	maxAttempts         int
 }
@@ -23,9 +23,9 @@ type TaskResult struct {
 }
 
 func NewGeneratorWorker(
-	generateUC *usecase.GenerateDocument,
-	incrementAttemptsUC *usecase.IncrementDocumentAttempts,
-	markErrorUC *usecase.MarkDocumentAsError,
+	generateUC *document.GenerateDocument,
+	incrementAttemptsUC *document.IncrementDocumentAttempts,
+	markErrorUC *document.MarkDocumentAsError,
 	queue queue.DocumentQueue,
 	maxAttempts int,
 ) *GeneratorWorker {
@@ -106,7 +106,7 @@ func (w *GeneratorWorker) handleTask(ctx context.Context, t queue.DocumentTask, 
 	default:
 	}
 
-	updatedAttempts, err := w.incrementAttemptsUC.Execute(ctx, usecase.IncrementDocumentAttemptsInput{
+	updatedAttempts, err := w.incrementAttemptsUC.Execute(ctx, document.IncrementDocumentAttemptsInput{
 		DocumentID: t.DocumentID,
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func (w *GeneratorWorker) handleTask(ctx context.Context, t queue.DocumentTask, 
 	}
 
 	if updatedAttempts > w.maxAttempts {
-		if err := w.markErrorUC.Execute(ctx, usecase.MarkDocumentAsErrorInput{
+		if err := w.markErrorUC.Execute(ctx, document.MarkDocumentAsErrorInput{
 			DocumentID: t.DocumentID,
 			Attempts:   updatedAttempts,
 		}); err != nil {
@@ -125,7 +125,7 @@ func (w *GeneratorWorker) handleTask(ctx context.Context, t queue.DocumentTask, 
 		return TaskResult{Task: t, Error: nil}
 	}
 
-	input := usecase.GenerateDocumentInput{
+	input := document.GenerateDocumentInput{
 		UnitGUID: t.UnitGUID,
 	}
 

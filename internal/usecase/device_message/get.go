@@ -1,4 +1,4 @@
-package usecase
+package device_message
 
 import (
 	"context"

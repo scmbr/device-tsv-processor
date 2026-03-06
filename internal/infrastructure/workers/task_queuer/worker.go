@@ -4,19 +4,20 @@ import (
 	"context"
 	"time"
 
-	"github.com/scmbr/device-tsv-processor/internal/usecase"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/document"
+	"github.com/scmbr/device-tsv-processor/internal/usecase/file"
 	"github.com/scmbr/device-tsv-processor/pkg/logger"
 )
 
 type QueueWorker struct {
-	fileEnqueueUC     *usecase.EnqueueFileProcessing
-	documentEnqueueUC *usecase.EnqueueDocumentGenerating
+	fileEnqueueUC     *file.EnqueueFileProcessing
+	documentEnqueueUC *document.EnqueueDocumentGenerating
 	interval          time.Duration
 }
 
 func NewQueueWorker(
-	fileUC *usecase.EnqueueFileProcessing,
-	documentUC *usecase.EnqueueDocumentGenerating,
+	fileUC *file.EnqueueFileProcessing,
+	documentUC *document.EnqueueDocumentGenerating,
 	interval time.Duration,
 ) *QueueWorker {
 	return &QueueWorker{

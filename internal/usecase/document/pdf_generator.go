@@ -1,4 +1,4 @@
-package usecase
+package document
 
 import "github.com/scmbr/device-tsv-processor/internal/domain"
 
