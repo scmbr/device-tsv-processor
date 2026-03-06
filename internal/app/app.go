@@ -17,8 +17,7 @@ import (
 )
 
 type App struct {
-	Config *config.Config
-
+	Config       *config.Config
 	DB           *sqlx.DB
 	RabbitClient *rabbitmq.Client
 	Repos        *repository.Repositories
@@ -114,20 +113,20 @@ func (a *App) Shutdown(ctx context.Context) error {
 			firstErr = err
 		}
 	}
-
+	logger.Info("server stopped", nil)
 	if err := a.RabbitClient.Close(); err != nil {
 		logger.Error("rabbit client close failed", err, nil)
 		if firstErr == nil {
 			firstErr = err
 		}
 	}
-
+	logger.Info("rabbit stopped", nil)
 	if err := a.DB.Close(); err != nil {
 		logger.Error("db close failed", err, nil)
 		if firstErr == nil {
 			firstErr = err
 		}
 	}
-
+	logger.Info("db stopped", nil)
 	return firstErr
 }
