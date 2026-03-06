@@ -19,11 +19,21 @@ type Config struct {
 	Rabbit      RabbitConfig
 	HTTP        HTTPConfig
 
-	BatchSize   int    `mapstructure:"batch_size"`
-	OutputDir   string `mapstructure:"output_dir"`
-	MaxAttempts int    `mapstructure:"max_attempts"`
+	BatchSize   int `mapstructure:"batch_size"`
+	Dir         DirConfig
+	Workers     WorkersConfig
+	MaxAttempts int `mapstructure:"max_attempts"`
 }
-
+type DirConfig struct {
+	InputDir  string `mapstructure:"input_dir"`
+	OutputDir string `mapstructure:"output_dir"`
+}
+type WorkersConfig struct {
+	GeneratorWorkersCount int           `mapstructure:"generator_workers_count"`
+	ProcessWorkersCount   int           `mapstructure:"process_workers_count"`
+	ScanDirectoryInterval time.Duration `mapstructure:"scan_directory_interval"`
+	EnqueueTasksInterval  time.Duration `mapstructure:"enqueue_tasks_interval"`
+}
 type PostgresConfig struct {
 	Username string
 	Host     string `mapstructure:"host"`
@@ -187,14 +197,23 @@ func (c *Config) Validate() error {
 	if c.HTTP.MaxHeaderMegabytes <= 0 {
 		return fmt.Errorf("http maxHeaderMegabytes must be > 0")
 	}
-	if c.OutputDir == "" {
+	if c.Dir.OutputDir == "" {
 		return fmt.Errorf("output directory is required")
+	}
+	if c.Dir.InputDir == "" {
+		return fmt.Errorf("input directory is required")
 	}
 	if c.BatchSize > 500 || c.BatchSize <= 0 {
 		return fmt.Errorf("batch size must be between 0 and 500")
 	}
-	if c.BatchSize > 10 || c.BatchSize <= 0 {
-		return fmt.Errorf("batch size must be between 0 and 10")
+	if c.Workers.EnqueueTasksInterval <= 0 || c.Workers.GeneratorWorkersCount <= 0 {
+		return fmt.Errorf("workers interval must be > 0")
+	}
+	if c.Workers.GeneratorWorkersCount > 10 || c.Workers.GeneratorWorkersCount <= 0 {
+		return fmt.Errorf("generator workers count must be between 0 and 10")
+	}
+	if c.Workers.ProcessWorkersCount > 10 || c.Workers.ProcessWorkersCount <= 0 {
+		return fmt.Errorf("process workers count must be between 0 and 10")
 	}
 	return nil
 }
