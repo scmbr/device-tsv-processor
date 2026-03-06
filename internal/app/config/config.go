@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -75,7 +76,9 @@ func Init(configsDir string) (*Config, error) {
 
 	cfg.SetDefaults()
 	cfg.OverrideFromEnv()
-
+	if err := cfg.ResolvePaths(""); err != nil {
+		return nil, fmt.Errorf("resolve paths: %w", err)
+	}
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
@@ -215,5 +218,23 @@ func (c *Config) Validate() error {
 	if c.Workers.ProcessWorkersCount > 10 || c.Workers.ProcessWorkersCount <= 0 {
 		return fmt.Errorf("process workers count must be between 0 and 10")
 	}
+	return nil
+}
+func (c *Config) ResolvePaths(baseDir string) error {
+	if baseDir == "" {
+		var err error
+		baseDir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
+	if !filepath.IsAbs(c.Dir.InputDir) {
+		c.Dir.InputDir = filepath.Join(baseDir, c.Dir.InputDir)
+	}
+	if !filepath.IsAbs(c.Dir.OutputDir) {
+		c.Dir.OutputDir = filepath.Join(baseDir, c.Dir.OutputDir)
+	}
+
 	return nil
 }
