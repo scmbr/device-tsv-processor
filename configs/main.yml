@@ -12,10 +12,10 @@ rabbit:
   document_queue_name: "document_queue"
 
 http:
-  host: "localhost"
+  host: "0.0.0.0"
   port: 8000
-  read_timeout: 5s
-  write_timeout: 5s
+  read_timeout: 10s
+  write_timeout: 10s
   max_header_bytes: 1048576
 
 batch_size: 100
