@@ -48,13 +48,13 @@ func (w *QueueWorker) Start(ctx context.Context) error {
 }
 
 func (w *QueueWorker) runOnce(ctx context.Context) {
-	fileCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	fileCtx, cancelFile := context.WithTimeout(ctx, 30*time.Second)
 
-	defer cancel()
+	defer cancelFile()
 	if err := w.fileEnqueueUC.Execute(fileCtx); err != nil {
 		logger.Error("enqueue file failed", err, nil)
 	}
-
+	
 	docCtx, cancelDoc := context.WithTimeout(ctx, 30*time.Second)
 	defer cancelDoc()
 	if err := w.documentEnqueueUC.Execute(docCtx); err != nil {
