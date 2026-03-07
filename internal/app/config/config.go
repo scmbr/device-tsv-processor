@@ -91,7 +91,7 @@ func (c *Config) SetDefaults() {
 		c.Postgres.SSLMode = "disable"
 	}
 	if c.HTTP.Port == 0 {
-		c.HTTP.Port = 8080
+		c.HTTP.Port = 8000
 	}
 	if c.HTTP.ReadTimeout <= 0 {
 		c.HTTP.ReadTimeout = 5 * time.Second
