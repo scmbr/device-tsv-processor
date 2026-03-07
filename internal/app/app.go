@@ -64,6 +64,10 @@ func (a *App) Run(ctx context.Context) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
+		logger.Info("server started", map[string]interface{}{
+			"host": a.Config.HTTP.Host,
+			"port": a.Config.HTTP.Port,
+		})
 		if err := a.Server.Run(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server error", err, nil)
 			return err
