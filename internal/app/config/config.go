@@ -62,9 +62,10 @@ type RabbitConfig struct {
 }
 
 func Init(configsDir string) (*Config, error) {
-	if err := godotenv.Load(".env"); err != nil {
-		return nil, err
+	if os.Getenv("APP_ENV") == "local" {
+		_ = godotenv.Load(".env")
 	}
+
 	if err := parseConfigFile(configsDir, os.Getenv("APP_ENV")); err != nil {
 		return nil, err
 	}

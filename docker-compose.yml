@@ -56,7 +56,6 @@ services:
       RABBIT_VHOST: "${RABBIT_VHOST:-/}"
     volumes:
       - ./configs:/app/configs:ro
-      - ./.env:/app/.env:ro
       - ./input:/app/input
       - ./output:/app/output
 
