@@ -3,6 +3,7 @@ package document_generator
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/scmbr/device-tsv-processor/internal/queue"
 	"github.com/scmbr/device-tsv-processor/internal/usecase/document"
@@ -100,6 +101,7 @@ func (w *GeneratorWorker) StartPool(ctx context.Context, workerCount int) error 
 }
 
 func (w *GeneratorWorker) handleTask(ctx context.Context, t queue.DocumentTask, workerID int) TaskResult {
+	start := time.Now()
 	select {
 	case <-ctx.Done():
 		return TaskResult{Task: t, Error: ctx.Err()}
@@ -132,10 +134,11 @@ func (w *GeneratorWorker) handleTask(ctx context.Context, t queue.DocumentTask, 
 	if err := w.generateUC.Execute(ctx, input); err != nil {
 		return TaskResult{Task: t, Error: err}
 	}
-
+	duration := time.Since(start)
 	logger.Info("document generated successfully", map[string]interface{}{
-		"unitGUID": t.UnitGUID,
-		"workerID": workerID,
+		"unitGUID":    t.UnitGUID,
+		"workerID":    workerID,
+		"duration_ms": duration.Milliseconds(),
 	})
 
 	return TaskResult{Task: t, Error: nil}

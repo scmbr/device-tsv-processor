@@ -3,6 +3,7 @@ package file_processor
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/scmbr/device-tsv-processor/internal/queue"
 	"github.com/scmbr/device-tsv-processor/internal/usecase/file"
@@ -100,6 +101,7 @@ func (w *ProcessWorker) StartPool(ctx context.Context, workerCount int) error {
 }
 
 func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask, workerID int) TaskResult {
+	start := time.Now()
 	select {
 	case <-ctx.Done():
 		return TaskResult{Task: t, Error: ctx.Err()}
@@ -133,11 +135,12 @@ func (w *ProcessWorker) handleTask(ctx context.Context, t queue.FileTask, worker
 	if err := w.processUC.Execute(ctx, input); err != nil {
 		return TaskResult{Task: t, Error: err}
 	}
-
+	duration := time.Since(start)
 	logger.Info("file processed successfully", map[string]interface{}{
-		"fileID":   t.FileID,
-		"path":     t.FullPath,
-		"workerID": workerID,
+		"fileID":      t.FileID,
+		"path":        t.FullPath,
+		"workerID":    workerID,
+		"duration_ms": duration.Milliseconds(),
 	})
 
 	return TaskResult{Task: t, Error: nil}
