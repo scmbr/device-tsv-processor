@@ -68,6 +68,7 @@ func (a *App) Run(ctx context.Context) error {
 			"host": a.Config.HTTP.Host,
 			"port": a.Config.HTTP.Port,
 		})
+
 		if err := a.Server.Run(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server error", err, nil)
 			return err
@@ -75,18 +76,18 @@ func (a *App) Run(ctx context.Context) error {
 		return nil
 	})
 
+	g.Go(func() error {
+		<-ctx.Done()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return a.Shutdown(shutdownCtx)
+	})
+
 	a.startWorkers(g, ctx)
 
-	err := g.Wait()
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if shutErr := a.Shutdown(shutdownCtx); shutErr != nil {
-		logger.Error("shutdown failed", shutErr, nil)
-	}
-
-	return err
+	return g.Wait()
 }
 
 func (a *App) startWorkers(g *errgroup.Group, ctx context.Context) {

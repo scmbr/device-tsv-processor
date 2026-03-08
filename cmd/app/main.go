@@ -25,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := application.Run(ctx); err != nil {
+	if err := application.Run(ctx); err != nil && err != context.Canceled {
 		logger.Error("app stopped with error", err, nil)
 		os.Exit(1)
 	}
