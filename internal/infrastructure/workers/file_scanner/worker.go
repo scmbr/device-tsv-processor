@@ -26,7 +26,7 @@ func NewScanWorker(
 
 func (w *ScanWorker) Start(ctx context.Context) error {
 	logger.Info("scan worker started", map[string]interface{}{
-		"interval_ms": w.interval,
+		"interval": w.interval.String(),
 	})
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
@@ -47,13 +47,19 @@ func (w *ScanWorker) scanOnce(ctx context.Context) {
 	defer cancel()
 
 	start := time.Now()
-	if err := w.scanUC.Execute(scanCtx); err != nil {
+
+	err := w.scanUC.Execute(scanCtx)
+
+	duration := time.Since(start)
+
+	if err != nil {
 		logger.Error("scan directory failed", err, map[string]interface{}{
-			"duration_ms": time.Since(start).Milliseconds(),
+			"duration_ms": duration.Milliseconds(),
 		})
 		return
 	}
+
 	logger.Info("scan directory completed", map[string]interface{}{
-		"duration_ms": time.Since(start).Milliseconds(),
+		"duration_ms": duration.Milliseconds(),
 	})
 }

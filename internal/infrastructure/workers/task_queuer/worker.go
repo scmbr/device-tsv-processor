@@ -29,7 +29,7 @@ func NewQueueWorker(
 
 func (w *QueueWorker) Start(ctx context.Context) error {
 	logger.Info("queue worker started", map[string]interface{}{
-		"interval_ms": w.interval,
+		"interval": w.interval.String(),
 	})
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
@@ -54,7 +54,7 @@ func (w *QueueWorker) runOnce(ctx context.Context) {
 	if err := w.fileEnqueueUC.Execute(fileCtx); err != nil {
 		logger.Error("enqueue file failed", err, nil)
 	}
-	
+
 	docCtx, cancelDoc := context.WithTimeout(ctx, 30*time.Second)
 	defer cancelDoc()
 	if err := w.documentEnqueueUC.Execute(docCtx); err != nil {
