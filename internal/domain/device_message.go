@@ -41,6 +41,7 @@ func NewDeviceMessage(
 	typ string,
 	bit int,
 	invertBit bool,
+	createdAt time.Time,
 ) (*DeviceMessage, error) {
 
 	msg := &DeviceMessage{
@@ -58,6 +59,7 @@ func NewDeviceMessage(
 		Type:      typ,
 		Bit:       bit,
 		InvertBit: invertBit,
+		CreatedAt: createdAt,
 	}
 
 	if err := msg.Validate(); err != nil {

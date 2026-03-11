@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/scmbr/device-tsv-processor/internal/domain"
 	"github.com/scmbr/device-tsv-processor/internal/errs"
@@ -97,6 +98,7 @@ func (p *TSVParser) Parse(
 			fields[12], // Type
 			bit,        // Bit
 			invertBit,  // InvertBit
+			time.Now(),
 
 		)
 		if err != nil {
