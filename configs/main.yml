@@ -31,3 +31,4 @@ workers:
   enqueue_tasks_interval: 5s
 
 max_attempts: 3
+font_path: "docs/assets/fonts/DejaVuSans.ttf"

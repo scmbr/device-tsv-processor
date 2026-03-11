@@ -23,7 +23,8 @@ type Config struct {
 	BatchSize   int `mapstructure:"batch_size"`
 	Dir         DirConfig
 	Workers     WorkersConfig
-	MaxAttempts int `mapstructure:"max_attempts"`
+	MaxAttempts int    `mapstructure:"max_attempts"`
+	FontPath    string `mapstructure:"font_path"`
 }
 type DirConfig struct {
 	InputDir  string `mapstructure:"input_dir"`

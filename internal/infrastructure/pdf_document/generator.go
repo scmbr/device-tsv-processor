@@ -4,38 +4,108 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/johnfercher/maroto/v2"
+	"github.com/johnfercher/maroto/v2/pkg/config"
+	"github.com/johnfercher/maroto/v2/pkg/props"
+	"github.com/johnfercher/maroto/v2/pkg/repository"
+
+	"github.com/johnfercher/maroto/v2/pkg/components/text"
+	"github.com/johnfercher/maroto/v2/pkg/consts/align"
+	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
+
 	"github.com/scmbr/device-tsv-processor/internal/domain"
 )
 
-type PDFGenerator struct{}
+type PDFGenerator struct {
+	fontPath string
+}
 
-func NewPDFGenerator() *PDFGenerator {
-	return &PDFGenerator{}
+func NewPDFGenerator(fontPath string) *PDFGenerator {
+	return &PDFGenerator{
+		fontPath: fontPath,
+	}
 }
 
 func (g *PDFGenerator) Generate(path string, messages []*domain.DeviceMessage) error {
-	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.SetFont("Arial", "", 10)
-	pdf.AddPage()
 
-	for i, m := range messages {
-		pdf.CellFormat(0, 6, formatMessage(i+1, m), "", 1, "", false, 0, "")
+	fontName := "custom"
+
+	customFonts, err := repository.New().
+		AddUTF8Font(fontName, fontstyle.Normal, g.fontPath).
+		AddUTF8Font(fontName, fontstyle.Bold, g.fontPath).
+		AddUTF8Font(fontName, fontstyle.Italic, g.fontPath).
+		AddUTF8Font(fontName, fontstyle.BoldItalic, g.fontPath).
+		Load()
+	if err != nil {
+		return err
 	}
 
-	return pdf.OutputFileAndClose(path)
+	cfg := config.NewBuilder().
+		WithCustomFonts(customFonts).
+		WithDefaultFont(&props.Font{
+			Family: fontName,
+		}).
+		Build()
+
+	m := maroto.New(cfg)
+	m.AddRow(12,
+		text.NewCol(12, "ОТЧЁТ ПО СООБЩЕНИЯМ УСТРОЙСТВА", props.Text{
+			Size:  16,
+			Style: fontstyle.Bold,
+			Align: align.Center,
+		}),
+	)
+
+	m.AddRow(6,
+		text.NewCol(6, fmt.Sprintf("Дата: %s", time.Now().Format(time.RFC3339)), props.Text{Size: 9}),
+		text.NewCol(6, fmt.Sprintf("Всего: %d", len(messages)), props.Text{Align: align.Right, Size: 9}),
+	)
+	m.AddRow(4)
+	grey := props.Color{
+		Red:   200,
+		Green: 200,
+		Blue:  200,
+	}
+
+	header := m.AddRow(7,
+		text.NewCol(2, "Device", headerStyle()),
+		text.NewCol(1, "Lvl", headerStyle()),
+		text.NewCol(2, "Class", headerStyle()),
+		text.NewCol(4, "Message", headerStyle()),
+		text.NewCol(2, "Created", headerStyle()),
+	)
+
+	header.WithStyle(&props.Cell{
+		BackgroundColor: &grey,
+	})
+	for _, msg := range messages {
+		m.AddRow(6,
+			text.NewCol(2, fmt.Sprintf("%d", msg.DeviceID), body()),
+			text.NewCol(1, fmt.Sprintf("%d", msg.Level), body()),
+			text.NewCol(2, msg.Class, body()),
+			text.NewCol(4, msg.Text, body()),
+			text.NewCol(2, msg.CreatedAt.Format("2006-01-02 15:04"), body()),
+		)
+	}
+
+	document, err := m.Generate()
+	if err != nil {
+		return err
+	}
+
+	return document.Save(path)
 }
 
-func formatMessage(index int, m *domain.DeviceMessage) string {
-	return fmt.Sprintf(
-		"%d) ID: %d | DeviceID: %d | MQTT: %s | InvID: %s | UnitGUID: %s\n"+
-			"   MsgID: %s | Text: %s | Context: %s | Class: %s | Level: %d\n"+
-			"   Area: %s | Addr: %s | Block: %s | Type: %s | Bit: %d | InvertBit: %v\n"+
-			"   CreatedAt: %s\n",
-		index,
-		m.ID, m.DeviceID, m.MQTT, m.InvID, m.UnitGUID,
-		m.MsgID, m.Text, m.Context, m.Class, m.Level,
-		m.Area, m.Addr, m.Block, m.Type, m.Bit, m.InvertBit,
-		m.CreatedAt.Format(time.RFC3339),
-	)
+func headerStyle() props.Text {
+	return props.Text{
+		Style: fontstyle.Bold,
+		Align: align.Center,
+		Size:  9,
+	}
+}
+
+func body() props.Text {
+	return props.Text{
+		Size: 8,
+	}
 }

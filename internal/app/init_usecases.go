@@ -10,7 +10,7 @@ import (
 )
 
 func initUseCases(cfg *config.Config, repos *repository.Repositories, queues *queue.Queues) *usecase.UseCases {
-	pdfGenerator := pdf_document.NewPDFGenerator()
+	pdfGenerator := pdf_document.NewPDFGenerator(cfg.FontPath)
 	tsvParser := parser.NewTSVParser()
 	return usecase.NewUseCases(usecase.UseCaseConfig{
 		Repos:        repos,
