@@ -58,6 +58,7 @@ services:
       - ./configs:/app/configs:ro
       - ./input:/app/input
       - ./output:/app/output
+      - ./docs/assets/fonts:/app/docs/assets/fonts:ro
 
   migrate: 
     image: migrate/migrate 
